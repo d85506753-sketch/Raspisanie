@@ -56,6 +56,7 @@ class AuthManager {
         const adminBtn = document.getElementById('open-admin-btn');
         const quickAddBtn = document.getElementById('quick-add-lesson-btn');
         const adminBadge = document.getElementById('admin-badge-indicator');
+        const addHwBtn = document.getElementById('add-hw-btn');
 
         if (user) {
             // Check if user is Admin
@@ -98,6 +99,9 @@ class AuthManager {
             if (adminBadge) {
                 adminBadge.style.display = this.isAdmin ? 'flex' : 'none';
             }
+            if (addHwBtn) {
+                addHwBtn.style.display = this.isAdmin ? 'inline-flex' : 'none';
+            }
 
             // Auto-unlock admin abuse panel
             if (this.isAdmin && window.adminAbuse) {
@@ -117,6 +121,7 @@ class AuthManager {
             if (adminBtn) adminBtn.style.display = 'none';
             if (quickAddBtn) quickAddBtn.style.display = 'none';
             if (adminBadge) adminBadge.style.display = 'none';
+            if (addHwBtn) addHwBtn.style.display = 'none';
 
             if (window.adminAbuse) {
                 window.adminAbuse.isAuthenticated = false;

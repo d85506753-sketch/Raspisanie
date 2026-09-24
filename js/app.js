@@ -20,10 +20,16 @@ const DEFAULT_HOMEWORK = [
         deadline: 'Завтра',
         urgent: true,
         completed: false,
+        deepseekLink: 'https://chat.deepseek.com',
+        aliceLink: '',
+        gdzLink: 'https://gdz.ru',
         solution: {
             source: 'DeepSeek AI',
             text: '№14.3:\nа) x² - 9 = (x - 3)(x + 3)\nб) 4a² - 25 = (2a - 5)(2a + 5)\n\n№14.7:\n(x + 2)² - 4 = x² + 4x + 4 - 4 = x(x + 4)',
-            link: 'https://chat.deepseek.com'
+            link: 'https://chat.deepseek.com',
+            deepseekLink: 'https://chat.deepseek.com',
+            aliceLink: '',
+            gdzLink: 'https://gdz.ru'
         },
         createdAt: Date.now() - 3600000 * 4
     },
@@ -34,10 +40,16 @@ const DEFAULT_HOMEWORK = [
         deadline: 'Через 2 дня',
         urgent: false,
         completed: false,
+        deepseekLink: '',
+        aliceLink: 'https://a.ya.ru',
+        gdzLink: 'https://gdz.ru',
         solution: {
             source: 'ГДЗ',
             text: 'Задача 3.12: F = m * g = 5 кг * 9.8 Н/кг = 49 Н.\nОтвет: Сила тяжести равна 49 Н.',
-            link: 'https://gdz.ru'
+            link: 'https://gdz.ru',
+            deepseekLink: '',
+            aliceLink: 'https://a.ya.ru',
+            gdzLink: 'https://gdz.ru'
         },
         createdAt: Date.now() - 3600000 * 8
     },
@@ -48,6 +60,9 @@ const DEFAULT_HOMEWORK = [
         deadline: 'Завтра',
         urgent: true,
         completed: true,
+        deepseekLink: '',
+        aliceLink: '',
+        gdzLink: '',
         createdAt: Date.now() - 3600000 * 12
     },
     {
@@ -57,6 +72,9 @@ const DEFAULT_HOMEWORK = [
         deadline: 'Пятница',
         urgent: false,
         completed: false,
+        deepseekLink: '',
+        aliceLink: '',
+        gdzLink: '',
         createdAt: Date.now() - 3600000 * 20
     }
 ];
@@ -68,6 +86,7 @@ class AppManager {
         this.activeDay = 'mon';
         this.hwFilter = 'all';
         this.bannerAnnouncement = '';
+        this.chatTimer = null;
 
         this.dayNames = {
             mon: 'Понедельник',
@@ -94,6 +113,8 @@ class AppManager {
         this.bindUI();
         this.updateStats();
         this.checkUrlImport();
+        this.checkActiveAdminChat();
+        this.setupCrossTabChatSync();
     }
 
     loadState() {
@@ -114,6 +135,15 @@ class AppManager {
 
             const savedHw = localStorage.getItem('curie_homework');
             this.homework = savedHw ? JSON.parse(savedHw) : JSON.parse(JSON.stringify(DEFAULT_HOMEWORK));
+
+            // Migration / ensure link properties exist
+            if (Array.isArray(this.homework)) {
+                this.homework.forEach(hw => {
+                    hw.deepseekLink = hw.deepseekLink || (hw.solution && hw.solution.deepseekLink) || '';
+                    hw.aliceLink = hw.aliceLink || (hw.solution && hw.solution.aliceLink) || '';
+                    hw.gdzLink = hw.gdzLink || (hw.solution && hw.solution.gdzLink) || '';
+                });
+            }
 
             const savedBanner = localStorage.getItem('curie_banner');
             this.bannerAnnouncement = savedBanner || '';
@@ -164,8 +194,11 @@ class AppManager {
 
         if (addHwBtn && hwModal) {
             addHwBtn.addEventListener('click', () => {
-                hwModal.classList.add('active');
-                if (window.soundEngine) window.soundEngine.playLaser();
+                if (!this.isUserAdmin()) {
+                    this.showToast('Только администратор может добавлять домашнее задание!', '🔒');
+                    return;
+                }
+                this.openAddHomeworkModal();
             });
         }
         if (closeHwModal && hwModal) {
@@ -182,24 +215,81 @@ class AppManager {
         if (hwForm) {
             hwForm.addEventListener('submit', (e) => {
                 e.preventDefault();
+                if (!this.isUserAdmin()) {
+                    this.showToast('Только администратор может сохранять задания!', '🔒');
+                    return;
+                }
+                const editId = (document.getElementById('hw-edit-id')?.value || '').trim();
                 const subject = document.getElementById('hw-subject-input').value.trim();
                 const text = document.getElementById('hw-text-input').value.trim();
                 const deadline = document.getElementById('hw-deadline-input').value.trim() || 'Скоро';
                 const urgent = document.getElementById('hw-urgent-input').checked;
+                const deepseekLink = (document.getElementById('hw-deepseek-link')?.value || '').trim();
+                const aliceLink = (document.getElementById('hw-alice-link')?.value || '').trim();
+                const gdzLink = (document.getElementById('hw-gdz-link')?.value || '').trim();
 
                 if (!subject || !text) return;
 
-                this.addHomework({
-                    id: 'hw_' + Date.now(),
-                    subject,
-                    text,
-                    deadline,
-                    urgent,
-                    completed: false,
-                    createdAt: Date.now()
-                });
+                if (editId) {
+                    const existing = this.homework.find(h => h.id === editId);
+                    if (existing) {
+                        existing.subject = subject;
+                        existing.text = text;
+                        existing.deadline = deadline;
+                        existing.urgent = urgent;
+                        existing.deepseekLink = deepseekLink;
+                        existing.aliceLink = aliceLink;
+                        existing.gdzLink = gdzLink;
+                        if (existing.solution) {
+                            if (deepseekLink) existing.solution.deepseekLink = deepseekLink;
+                            if (aliceLink) existing.solution.aliceLink = aliceLink;
+                            if (gdzLink) existing.solution.gdzLink = gdzLink;
+                        } else if (deepseekLink || aliceLink || gdzLink) {
+                            existing.solution = {
+                                source: deepseekLink ? 'DeepSeek AI' : (aliceLink ? 'Яндекс Алиса' : 'ГДЗ'),
+                                text: 'Готовые решения и материалы прикреплены по ссылкам выше.',
+                                link: deepseekLink || aliceLink || gdzLink,
+                                deepseekLink,
+                                aliceLink,
+                                gdzLink
+                            };
+                        }
+                        this.saveState();
+                        this.renderHomework();
+                        this.showToast(`Задание "${subject}" обновлено!`, '✏️');
+                    }
+                } else {
+                    const newItem = {
+                        id: 'hw_' + Date.now(),
+                        subject,
+                        text,
+                        deadline,
+                        urgent,
+                        completed: false,
+                        deepseekLink,
+                        aliceLink,
+                        gdzLink,
+                        createdAt: Date.now()
+                    };
+
+                    if (deepseekLink || aliceLink || gdzLink) {
+                        newItem.solution = {
+                            source: deepseekLink ? 'DeepSeek AI' : (aliceLink ? 'Яндекс Алиса' : 'ГДЗ'),
+                            text: 'Готовые решения и материалы прикреплены по ссылкам выше.',
+                            link: deepseekLink || aliceLink || gdzLink,
+                            deepseekLink,
+                            aliceLink,
+                            gdzLink
+                        };
+                    }
+
+                    this.addHomework(newItem);
+                    this.showToast(`Задание "${subject}" добавлено!`, '📝');
+                }
 
                 hwForm.reset();
+                const editIdInput = document.getElementById('hw-edit-id');
+                if (editIdInput) editIdInput.value = '';
                 hwModal.classList.remove('active');
                 if (window.effectsManager) window.effectsManager.confettiBurst();
                 if (window.soundEngine) window.soundEngine.playSuccess();
@@ -346,17 +436,46 @@ class AppManager {
         if (answerForm) {
             answerForm.addEventListener('submit', (e) => {
                 e.preventDefault();
+                if (!this.isUserAdmin()) {
+                    this.showToast('Только администратор может публиковать решения!', '🔒');
+                    return;
+                }
                 const hwId = document.getElementById('answer-hw-id').value;
                 const source = document.getElementById('answer-source-select').value;
-                const text = document.getElementById('answer-text-input').value.trim();
-                const link = document.getElementById('answer-link-input').value.trim();
+                let text = document.getElementById('answer-text-input').value.trim();
+                const deepseekLink = (document.getElementById('answer-deepseek-link')?.value || '').trim();
+                const aliceLink = (document.getElementById('answer-alice-link')?.value || '').trim();
+                const gdzLink = (document.getElementById('answer-gdz-link')?.value || '').trim();
+                const link = (document.getElementById('answer-link-input')?.value || '').trim();
 
-                if (!hwId || !text) return;
+                if (!hwId) return;
 
-                this.attachSolution(hwId, { source, text, link });
+                if (!text && !deepseekLink && !aliceLink && !gdzLink && !link) {
+                    this.showToast('Укажите текст решения или ссылку на чат / ГДЗ!', '⚠️');
+                    return;
+                }
+
+                if (!text) {
+                    text = 'Готовые материалы и решения прикреплены ссылками выше.';
+                }
+
+                this.attachSolution(hwId, {
+                    source,
+                    text,
+                    deepseekLink,
+                    aliceLink,
+                    gdzLink,
+                    link
+                });
                 answerForm.reset();
                 answerModal.classList.remove('active');
             });
+        }
+
+        // Close Admin Chat Popup button
+        const closeChatBtn = document.getElementById('close-chat-popup');
+        if (closeChatBtn) {
+            closeChatBtn.addEventListener('click', () => this.hideAdminChatMessage(true));
         }
 
         // Quick bell check timer every minute
@@ -523,6 +642,11 @@ class AppManager {
 
         let html = '';
         filtered.forEach(hw => {
+            const deepseekUrl = hw.deepseekLink || (hw.solution && hw.solution.deepseekLink) || '';
+            const aliceUrl = hw.aliceLink || (hw.solution && hw.solution.aliceLink) || '';
+            const gdzUrl = hw.gdzLink || (hw.solution && hw.solution.gdzLink) || '';
+            const hasSolution = Boolean(hw.solution && (hw.solution.text || hw.solution.link || hw.solution.deepseekLink || hw.solution.aliceLink || hw.solution.gdzLink));
+
             html += `
                 <div class="hw-card ${hw.completed ? 'completed' : ''} ${hw.urgent ? 'urgent-border' : ''}" data-id="${hw.id}">
                     <div class="hw-checkbox-wrapper">
@@ -537,41 +661,70 @@ class AppManager {
                         <p class="hw-task-text">${this.escapeHtml(hw.text)}</p>
 
                         <!-- Attached Solution / Answer section -->
-                        ${hw.solution ? `
+                        ${hasSolution ? `
                             <div class="hw-solution-container">
                                 <button class="solution-toggle-btn" onclick="app.toggleSolutionView('${hw.id}')">
                                     💡 Решение (${this.escapeHtml(hw.solution.source || 'Ответ')}) ▾
                                 </button>
                                 <div id="solution_box_${hw.id}" class="solution-content-box" style="display: none;">
                                     <div class="solution-header">
-                                        <span class="solution-source-badge source-${(hw.solution.source || 'ai').toLowerCase()}">${this.escapeHtml(hw.solution.source)}</span>
-                                        ${hw.solution.link ? `<a href="${this.escapeHtml(hw.solution.link)}" target="_blank" rel="noopener" class="solution-source-link">🔗 Источник</a>` : ''}
-                                        <button class="mini-tool-btn" onclick="app.copySolution('${hw.id}')">📋 Скопировать</button>
+                                        <span class="solution-source-badge">${this.escapeHtml(hw.solution.source || 'Решение')}</span>
+                                        <div class="solution-links-chips">
+                                            ${deepseekUrl ? `<a href="${this.escapeHtml(deepseekUrl)}" target="_blank" rel="noopener noreferrer" class="solution-source-link deepseek-chip" title="Открыть чат решения в DeepSeek">🧠 Чат в DeepSeek ↗</a>` : ''}
+                                            ${aliceUrl ? `<a href="${this.escapeHtml(aliceUrl)}" target="_blank" rel="noopener noreferrer" class="solution-source-link alice-chip" title="Открыть диалог с Алисой">🟣 Чат в Алисе ↗</a>` : ''}
+                                            ${gdzUrl ? `<a href="${this.escapeHtml(gdzUrl)}" target="_blank" rel="noopener noreferrer" class="solution-source-link gdz-chip" title="Открыть страницу решения на ГДЗ">📚 Страница ГДЗ ↗</a>` : ''}
+                                            ${(hw.solution.link && hw.solution.link !== deepseekUrl && hw.solution.link !== aliceUrl && hw.solution.link !== gdzUrl) ? `<a href="${this.escapeHtml(hw.solution.link)}" target="_blank" rel="noopener noreferrer" class="solution-source-link">🔗 Источник</a>` : ''}
+                                        </div>
+                                        ${hw.solution.text ? `<button class="mini-tool-btn" onclick="app.copySolution('${hw.id}')">📋 Скопировать</button>` : ''}
                                     </div>
-                                    <div class="solution-text">${this.escapeHtml(hw.solution.text)}</div>
+                                    ${hw.solution.text ? `<div class="solution-text">${this.escapeHtml(hw.solution.text)}</div>` : ''}
                                 </div>
                             </div>
                         ` : ''}
 
                         <div class="hw-card-footer">
                             <div class="hw-ai-helpers">
-                                <button class="mini-tool-btn" onclick="app.openDeepSeekWithPrompt('${this.escapeQuotes(hw.subject)}', '${this.escapeQuotes(hw.text)}')">
-                                    🧠 DeepSeek
-                                </button>
-                                <button class="mini-tool-btn" onclick="app.openAliceWithPrompt('${this.escapeQuotes(hw.subject)}', '${this.escapeQuotes(hw.text)}')">
-                                    🟣 Алиса
-                                </button>
-                                <button class="mini-tool-btn" onclick="app.searchGDZ('${this.escapeQuotes(hw.subject)}')">
-                                    📚 ГДЗ
-                                </button>
+                                ${deepseekUrl ? `
+                                    <a href="${this.escapeHtml(deepseekUrl)}" target="_blank" rel="noopener noreferrer" class="mini-tool-btn active-link deepseek-btn" title="Перейти в готовый чат DeepSeek с решением">
+                                        🧠 Чат DeepSeek ↗
+                                    </a>
+                                ` : `
+                                    <button class="mini-tool-btn" onclick="app.openDeepSeekWithPrompt('${this.escapeQuotes(hw.subject)}', '${this.escapeQuotes(hw.text)}')" title="Сгенерировать промпт и открыть DeepSeek">
+                                        🧠 DeepSeek
+                                    </button>
+                                `}
+
+                                ${aliceUrl ? `
+                                    <a href="${this.escapeHtml(aliceUrl)}" target="_blank" rel="noopener noreferrer" class="mini-tool-btn active-link alice-btn" title="Перейти в готовый диалог с Алисой">
+                                        🟣 Чат Алисы ↗
+                                    </a>
+                                ` : `
+                                    <button class="mini-tool-btn" onclick="app.openAliceWithPrompt('${this.escapeQuotes(hw.subject)}', '${this.escapeQuotes(hw.text)}')" title="Сгенерировать вопрос и открыть Алису">
+                                        🟣 Алиса
+                                    </button>
+                                `}
+
+                                ${gdzUrl ? `
+                                    <a href="${this.escapeHtml(gdzUrl)}" target="_blank" rel="noopener noreferrer" class="mini-tool-btn active-link gdz-btn" title="Перейти на страницу с готовым ГДЗ">
+                                        📚 Страница ГДЗ ↗
+                                    </a>
+                                ` : `
+                                    <button class="mini-tool-btn" onclick="app.searchGDZ('${this.escapeQuotes(hw.subject)}')" title="Искать ГДЗ">
+                                        📚 ГДЗ
+                                    </button>
+                                `}
+
                                 ${isAdmin ? `
-                                    <button class="mini-tool-btn admin-upload-btn" onclick="app.openAnswerModal('${hw.id}')" title="Загрузить готовый ответ от DeepSeek, Алисы или ГДЗ">
-                                        📥 ${hw.solution ? 'Изменить ответ' : 'Загрузить ответ'}
+                                    <button class="mini-tool-btn admin-upload-btn" onclick="app.openAnswerModal('${hw.id}')" title="Загрузить или изменить готовый ответ и ссылки на чаты">
+                                        📥 ${hasSolution || deepseekUrl || aliceUrl || gdzUrl ? 'Изменить ответ/ссылки' : 'Загрузить ответ/ссылки'}
                                     </button>
                                 ` : ''}
                             </div>
                             ${isAdmin ? `
-                                <button class="delete-hw-btn" title="Удалить задачу" onclick="app.deleteHomework('${hw.id}')">🗑️</button>
+                                <div style="display: flex; gap: 4px; align-items: center;">
+                                    <button class="edit-hw-btn" title="Редактировать задание" onclick="app.openEditHomeworkModal('${hw.id}')">✏️</button>
+                                    <button class="delete-hw-btn" title="Удалить задачу" onclick="app.deleteHomework('${hw.id}')">🗑️</button>
+                                </div>
                             ` : ''}
                         </div>
                     </div>
@@ -581,6 +734,60 @@ class AppManager {
 
         container.innerHTML = html;
         this.updateStats();
+    }
+
+    openAddHomeworkModal() {
+        if (!this.isUserAdmin()) {
+            this.showToast('Только администратор может добавлять домашнее задание!', '🔒');
+            return;
+        }
+        const modal = document.getElementById('hw-modal');
+        const titleEl = document.getElementById('hw-modal-title');
+        const editIdInput = document.getElementById('hw-edit-id');
+        const form = document.getElementById('hw-form');
+        if (form) form.reset();
+        if (editIdInput) editIdInput.value = '';
+        if (titleEl) titleEl.innerText = '📝 Добавить задание';
+        if (modal) modal.classList.add('active');
+        if (window.soundEngine) window.soundEngine.playLaser();
+    }
+
+    openEditHomeworkModal(hwId) {
+        if (!this.isUserAdmin()) {
+            this.showToast('Только администратор может редактировать задания!', '🔒');
+            return;
+        }
+        const item = this.homework.find(h => h.id === hwId);
+        if (!item) return;
+
+        const modal = document.getElementById('hw-modal');
+        const titleEl = document.getElementById('hw-modal-title');
+        const editIdInput = document.getElementById('hw-edit-id');
+        const subjectInput = document.getElementById('hw-subject-input');
+        const textInput = document.getElementById('hw-text-input');
+        const deadlineInput = document.getElementById('hw-deadline-input');
+        const urgentInput = document.getElementById('hw-urgent-input');
+        const deepseekInput = document.getElementById('hw-deepseek-link');
+        const aliceInput = document.getElementById('hw-alice-link');
+        const gdzInput = document.getElementById('hw-gdz-link');
+
+        if (editIdInput) editIdInput.value = hwId;
+        if (titleEl) titleEl.innerText = `✏️ Редактировать: ${item.subject}`;
+        if (subjectInput) subjectInput.value = item.subject || '';
+        if (textInput) textInput.value = item.text || '';
+        if (deadlineInput) deadlineInput.value = item.deadline || '';
+        if (urgentInput) urgentInput.checked = Boolean(item.urgent);
+
+        const dLink = item.deepseekLink || (item.solution && item.solution.deepseekLink) || '';
+        const aLink = item.aliceLink || (item.solution && item.solution.aliceLink) || '';
+        const gLink = item.gdzLink || (item.solution && item.solution.gdzLink) || '';
+
+        if (deepseekInput) deepseekInput.value = dLink;
+        if (aliceInput) aliceInput.value = aLink;
+        if (gdzInput) gdzInput.value = gLink;
+
+        if (modal) modal.classList.add('active');
+        if (window.soundEngine) window.soundEngine.playLaser();
     }
 
     addHomework(item) {
@@ -629,7 +836,7 @@ class AppManager {
 
     openAnswerModal(hwId) {
         if (!this.isUserAdmin()) {
-            alert('Только администратор может загружать решения!');
+            this.showToast('Только администратор может загружать решения!', '🔒');
             return;
         }
 
@@ -643,20 +850,31 @@ class AppManager {
         const sourceSelect = document.getElementById('answer-source-select');
         const textInput = document.getElementById('answer-text-input');
         const linkInput = document.getElementById('answer-link-input');
+        const deepseekInput = document.getElementById('answer-deepseek-link');
+        const aliceInput = document.getElementById('answer-alice-link');
+        const gdzInput = document.getElementById('answer-gdz-link');
 
         if (!modal) return;
 
         idInput.value = hwId;
-        if (titleEl) titleEl.innerText = `💡 Загрузить ответ: ${item.subject}`;
+        if (titleEl) titleEl.innerText = `💡 Загрузить ответ & ссылки: ${item.subject}`;
         if (taskPreview) taskPreview.innerText = item.text;
 
+        const dLink = item.deepseekLink || (item.solution && item.solution.deepseekLink) || '';
+        const aLink = item.aliceLink || (item.solution && item.solution.aliceLink) || '';
+        const gLink = item.gdzLink || (item.solution && item.solution.gdzLink) || '';
+        const eLink = (item.solution && item.solution.link) || '';
+
+        if (deepseekInput) deepseekInput.value = dLink;
+        if (aliceInput) aliceInput.value = aLink;
+        if (gdzInput) gdzInput.value = gLink;
+        if (linkInput) linkInput.value = (eLink && eLink !== dLink && eLink !== aLink && eLink !== gLink) ? eLink : '';
+
         if (item.solution) {
-            sourceSelect.value = item.solution.source || 'DeepSeek AI';
-            textInput.value = item.solution.text || '';
-            linkInput.value = item.solution.link || '';
+            if (sourceSelect) sourceSelect.value = item.solution.source || 'DeepSeek AI';
+            if (textInput) textInput.value = item.solution.text || '';
         } else {
-            textInput.value = '';
-            linkInput.value = '';
+            if (textInput) textInput.value = '';
         }
 
         modal.classList.add('active');
@@ -665,16 +883,28 @@ class AppManager {
 
     attachSolution(hwId, solutionData) {
         if (!this.isUserAdmin()) {
-            alert('Только администратор может загружать решения!');
+            this.showToast('Только администратор может загружать решения!', '🔒');
             return;
         }
 
         const item = this.homework.find(h => h.id === hwId);
         if (item) {
-            item.solution = solutionData;
+            item.deepseekLink = solutionData.deepseekLink || item.deepseekLink || '';
+            item.aliceLink = solutionData.aliceLink || item.aliceLink || '';
+            item.gdzLink = solutionData.gdzLink || item.gdzLink || '';
+
+            item.solution = {
+                source: solutionData.source || 'Решение',
+                text: solutionData.text || '',
+                deepseekLink: solutionData.deepseekLink || item.deepseekLink || '',
+                aliceLink: solutionData.aliceLink || item.aliceLink || '',
+                gdzLink: solutionData.gdzLink || item.gdzLink || '',
+                link: solutionData.link || solutionData.deepseekLink || solutionData.aliceLink || solutionData.gdzLink || ''
+            };
+
             this.saveState();
             this.renderHomework();
-            this.showToast(`Ответ сохранен!`, '💡');
+            this.showToast(`Ответ и ссылки сохранены!`, '💡');
             if (window.soundEngine) window.soundEngine.playSuccess();
             if (window.effectsManager) window.effectsManager.confettiBurst();
         }
@@ -831,23 +1061,128 @@ class AppManager {
         if (window.soundEngine) window.soundEngine.playLaser();
     }
 
-    // --- ANNOUNCEMENT BANNER ---
-    showAnnouncement(text, save = true) {
-        this.bannerAnnouncement = text;
-        const banner = document.getElementById('announcement-bar');
-        const marquee = document.getElementById('announcement-marquee');
-        if (banner && marquee) {
-            marquee.innerText = text;
-            banner.style.display = 'flex';
+    // --- ADMIN CHAT MESSAGE BOX (20-25s) ---
+    showAdminChatMessage(text, authorName = 'Админ', avatar = null, duration = 25000, saveToStorage = true) {
+        if (!text) return;
+
+        const chatPopup = document.getElementById('admin-chat-popup');
+        const chatAuthor = document.getElementById('chat-popup-author');
+        const chatText = document.getElementById('chat-popup-text');
+        const chatAvatar = document.getElementById('chat-popup-avatar');
+        const progressBar = document.getElementById('chat-popup-progress-bar');
+        const timeLabel = document.getElementById('chat-time-label');
+
+        if (!chatPopup) return;
+
+        if (saveToStorage) {
+            const payload = {
+                text,
+                author: authorName,
+                avatar: avatar || '👑',
+                timestamp: Date.now(),
+                duration: duration
+            };
+            try {
+                localStorage.setItem('curie_admin_chat', JSON.stringify(payload));
+            } catch (e) {}
         }
-        if (save) this.saveState();
+
+        if (chatAuthor) chatAuthor.innerText = authorName;
+        if (chatText) chatText.innerText = text;
+        if (timeLabel) timeLabel.innerText = 'только что';
+
+        if (chatAvatar) {
+            if (avatar && avatar.startsWith('http')) {
+                chatAvatar.innerHTML = `<img src="${this.escapeHtml(avatar)}" alt="Avatar">`;
+            } else {
+                chatAvatar.innerHTML = `<span>${this.escapeHtml(avatar || '👑')}</span>`;
+            }
+        }
+
+        chatPopup.classList.remove('closing');
+        chatPopup.style.display = 'block';
+
+        if (progressBar) {
+            progressBar.style.transition = 'none';
+            progressBar.style.width = '100%';
+            setTimeout(() => {
+                progressBar.style.transition = `width ${duration}ms linear`;
+                progressBar.style.width = '0%';
+            }, 40);
+        }
+
+        if (window.soundEngine) {
+            window.soundEngine.playSuccess();
+        }
+
+        if (this.chatTimer) clearTimeout(this.chatTimer);
+        this.chatTimer = setTimeout(() => {
+            this.hideAdminChatMessage(saveToStorage);
+        }, duration);
+    }
+
+    hideAdminChatMessage(clearStorage = true) {
+        const chatPopup = document.getElementById('admin-chat-popup');
+        if (!chatPopup) return;
+
+        chatPopup.classList.add('closing');
+        setTimeout(() => {
+            chatPopup.style.display = 'none';
+            chatPopup.classList.remove('closing');
+        }, 280);
+
+        if (this.chatTimer) {
+            clearTimeout(this.chatTimer);
+            this.chatTimer = null;
+        }
+
+        if (clearStorage) {
+            localStorage.removeItem('curie_admin_chat');
+        }
+    }
+
+    checkActiveAdminChat() {
+        try {
+            const raw = localStorage.getItem('curie_admin_chat');
+            if (raw) {
+                const data = JSON.parse(raw);
+                const elapsed = Date.now() - data.timestamp;
+                const remaining = (data.duration || 25000) - elapsed;
+                if (remaining > 1500) {
+                    this.showAdminChatMessage(data.text, data.author, data.avatar, remaining, false);
+                } else {
+                    localStorage.removeItem('curie_admin_chat');
+                }
+            }
+        } catch (e) {}
+    }
+
+    setupCrossTabChatSync() {
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'curie_admin_chat') {
+                if (e.newValue) {
+                    try {
+                        const data = JSON.parse(e.newValue);
+                        const elapsed = Date.now() - data.timestamp;
+                        const remaining = (data.duration || 25000) - elapsed;
+                        if (remaining > 1500) {
+                            this.showAdminChatMessage(data.text, data.author, data.avatar, remaining, false);
+                        }
+                    } catch (err) {}
+                } else {
+                    this.hideAdminChatMessage(false);
+                }
+            }
+        });
+    }
+
+    // Backwards compatibility wrappers
+    showAnnouncement(text, save = true) {
+        this.showAdminChatMessage(text, 'Админ', '👑', 25000, save);
     }
 
     hideAnnouncement() {
-        this.bannerAnnouncement = '';
-        const banner = document.getElementById('announcement-bar');
-        if (banner) banner.style.display = 'none';
-        this.saveState();
+        this.hideAdminChatMessage(true);
     }
 
     // --- EXPORT & SHARE ---

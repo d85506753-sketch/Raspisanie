@@ -11,12 +11,7 @@
 </head>
 <body>
 
-    <!-- Admin Broadcast Announcement Bar -->
-    <div id="announcement-bar" class="announcement-bar">
-        <div id="announcement-marquee" class="announcement-marquee">
-            📢 Добро пожаловать! Завтра уроки по расписанию.
-        </div>
-    </div>
+
 
     <div class="app-container">
         <!-- Site Header -->
@@ -137,7 +132,7 @@
                         <h2 class="section-title">📝 Домашнее задание</h2>
                         <span id="hw-stat-text" class="section-subtitle">0 из 0 выполнено</span>
                     </div>
-                    <button class="cool-btn primary" id="add-hw-btn">
+                    <button class="cool-btn primary" id="add-hw-btn" style="display: none;">
                         + Добавить ДЗ
                     </button>
                 </div>
@@ -171,12 +166,13 @@
 
     <!-- Add / Edit Homework Modal -->
     <div id="hw-modal" class="modal-backdrop">
-        <div class="modal-window">
+        <div class="modal-window" style="max-width: 540px;">
             <div class="modal-header">
-                <h3 style="font-weight: 700; font-size: 1.2rem;">📝 Добавить задание</h3>
+                <h3 id="hw-modal-title" style="font-weight: 700; font-size: 1.2rem;">📝 Добавить задание</h3>
                 <button class="modal-close-btn" id="close-hw-modal">&times;</button>
             </div>
             <form id="hw-form">
+                <input type="hidden" id="hw-edit-id" value="">
                 <div class="form-group">
                     <label>Предмет:</label>
                     <input type="text" id="hw-subject-input" class="form-input" placeholder="Например: Алгебра, Физика, Русский язык..." required>
@@ -193,8 +189,29 @@
                     <input type="checkbox" id="hw-urgent-input">
                     <label for="hw-urgent-input" style="margin: 0; cursor: pointer; color: var(--danger); font-weight: 600;">🔥 Срочное задание (выделить красным)</label>
                 </div>
+
+                <!-- Links Section (DeepSeek, Alice, GDZ) -->
+                <div class="hw-modal-links-section" style="margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-color);">
+                    <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-color); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                        <span>🔗 Прямые ссылки на чаты ИИ и ГДЗ</span>
+                        <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: normal;">(необязательно)</span>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 10px;">
+                        <label style="font-size: 0.8rem; color: var(--text-muted);">🧠 Ссылка на чат в DeepSeek:</label>
+                        <input type="url" id="hw-deepseek-link" class="form-input" placeholder="https://chat.deepseek.com/...">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 10px;">
+                        <label style="font-size: 0.8rem; color: var(--text-muted);">🟣 Ссылка на чат в Алисе (a.ya.ru):</label>
+                        <input type="url" id="hw-alice-link" class="form-input" placeholder="https://a.ya.ru/... или https://alice.yandex.ru/...">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 6px;">
+                        <label style="font-size: 0.8rem; color: var(--text-muted);">📚 Ссылка на страницу ГДЗ / Решебника:</label>
+                        <input type="url" id="hw-gdz-link" class="form-input" placeholder="https://gdz.ru/... или https://resheba.me/...">
+                    </div>
+                </div>
+
                 <div style="margin-top: 20px;">
-                    <button type="submit" class="cool-btn primary" style="width: 100%; justify-content: center;">Сохранить задание</button>
+                    <button type="submit" id="hw-submit-btn" class="cool-btn primary" style="width: 100%; justify-content: center;">Сохранить задание</button>
                 </div>
             </form>
         </div>
@@ -297,9 +314,9 @@
 
     <!-- Answer / Solution Upload Modal (DeepSeek, Алиса, ГДЗ) -->
     <div id="answer-modal" class="modal-backdrop">
-        <div class="modal-window" style="max-width: 560px;">
+        <div class="modal-window" style="max-width: 580px;">
             <div class="modal-header">
-                <h3 id="answer-modal-title" style="font-weight: 700; font-size: 1.2rem;">💡 Загрузить ответ / решение</h3>
+                <h3 id="answer-modal-title" style="font-weight: 700; font-size: 1.2rem;">💡 Загрузить ответ / ссылки на чаты</h3>
                 <button class="modal-close-btn" id="close-answer-modal">&times;</button>
             </div>
             
@@ -331,15 +348,35 @@
                         <option value="Администратор">✍️ Решение от Администратора</option>
                     </select>
                 </div>
+
+                <!-- Dedicated Link Inputs -->
+                <div style="background: var(--bg-subtle); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 14px;">
+                    <p style="font-size: 0.82rem; font-weight: 600; color: var(--text-main); margin-bottom: 8px;">
+                        🔗 Ссылки на чаты и готовые решения для учеников:
+                    </p>
+                    <div class="form-group" style="margin-bottom: 8px;">
+                        <label style="font-size: 0.8rem; color: var(--text-muted);">🧠 Ссылка на чат в DeepSeek:</label>
+                        <input type="url" id="answer-deepseek-link" class="form-input" placeholder="https://chat.deepseek.com/a/chat/s/...">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 8px;">
+                        <label style="font-size: 0.8rem; color: var(--text-muted);">🟣 Ссылка на чат в Алисе (a.ya.ru):</label>
+                        <input type="url" id="answer-alice-link" class="form-input" placeholder="https://a.ya.ru/... или https://alice.yandex.ru/...">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label style="font-size: 0.8rem; color: var(--text-muted);">📚 Ссылка на страницу ГДЗ / Решебника:</label>
+                        <input type="url" id="answer-gdz-link" class="form-input" placeholder="https://gdz.ru/... или https://resheba.me/...">
+                    </div>
+                </div>
+
                 <div class="form-group">
-                    <label>Текст решения / ответа:</label>
-                    <textarea id="answer-text-input" class="form-textarea" rows="6" placeholder="Вставьте сюда решение, шаги вычислений или ответ..." required></textarea>
+                    <label>Текст решения / ответа (необязательно, если указаны ссылки):</label>
+                    <textarea id="answer-text-input" class="form-textarea" rows="4" placeholder="Вставьте сюда решение, шаги вычислений или ответ..."></textarea>
                 </div>
                 <div class="form-group">
-                    <label>Ссылка на источник (необязательно):</label>
-                    <input type="url" id="answer-link-input" class="form-input" placeholder="https://gdz.ru/... или https://chat.deepseek.com/...">
+                    <label style="font-size: 0.8rem; color: var(--text-muted);">Дополнительная ссылка (необязательно):</label>
+                    <input type="url" id="answer-link-input" class="form-input" placeholder="https://...">
                 </div>
-                <button type="submit" class="cool-btn primary" style="width: 100%; justify-content: center; margin-top: 10px;">💾 Опубликовать решение</button>
+                <button type="submit" class="cool-btn primary" style="width: 100%; justify-content: center; margin-top: 10px;">💾 Опубликовать решение и ссылки</button>
             </form>
         </div>
     </div>
@@ -405,13 +442,19 @@
                     </div>
                 </div>
 
-                <!-- 3. Announcement Banner Broadcast -->
+                <!-- 3. Admin Live Chat Message Box (20-25 sec) -->
                 <div class="admin-card-section">
-                    <h4 class="admin-section-subtitle">📢 Объявление на сайте</h4>
-                    <div style="display: flex; gap: 8px;">
-                        <input type="text" id="admin-banner-input" class="form-input" placeholder="Текст объявления (например: Завтра сокращённый день)">
-                        <button class="cool-btn primary" id="set-banner-btn" style="white-space: nowrap;">Опубликовать</button>
-                        <button class="cool-btn" id="clear-banner-btn" style="white-space: nowrap;">Убрать</button>
+                    <h4 class="admin-section-subtitle">💬 Сообщение в чат от Админа (на 20-25 сек)</h4>
+                    <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 10px;">
+                        Сообщение появится на сайте в виде всплывающего чат-бокса с вашей аватаркой на 25 секунд.
+                    </p>
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                        <input type="text" id="admin-chat-input" class="form-input" placeholder="Например: Как же я круто всё сделал">
+                        <button class="cool-btn primary" id="send-chat-btn" style="white-space: nowrap;">💬 Отправить в чат</button>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.78rem; color: var(--text-muted);">Длительность показа: 25 секунд</span>
+                        <button class="cool-btn" id="clear-chat-btn" style="font-size: 0.8rem; padding: 4px 10px;">🗑️ Закрыть чат</button>
                     </div>
                 </div>
 
@@ -489,6 +532,30 @@
                     <p id="excuse-output" style="font-style: italic; color: var(--text-muted); font-size: 0.85rem; text-align: center; min-height: 20px;"></p>
                 </div>
             </div>
+        </div>
+    <!-- Admin Live Chat Popup Box (20-25s) -->
+    <div id="admin-chat-popup" class="admin-chat-popup" role="alert">
+        <div class="chat-popup-inner">
+            <div class="chat-popup-avatar" id="chat-popup-avatar" title="Аватарка администратора">
+                <span>👑</span>
+            </div>
+            <div class="chat-popup-content">
+                <div class="chat-popup-header">
+                    <div class="chat-popup-author-badge">
+                        <span id="chat-popup-author">Админ</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="chat-popup-time" id="chat-time-label">только что</span>
+                        <button class="chat-popup-close-btn" id="close-chat-popup" title="Закрыть">&times;</button>
+                    </div>
+                </div>
+                <div class="chat-popup-message" id="chat-popup-text">
+                    Как же я круто всё сделал
+                </div>
+            </div>
+        </div>
+        <div class="chat-popup-progress-container">
+            <div class="chat-popup-progress-bar" id="chat-popup-progress-bar"></div>
         </div>
     </div>
 

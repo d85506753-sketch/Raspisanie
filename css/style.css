@@ -50,30 +50,139 @@ body {
 }
 
 /* ==========================================================================
-   Announcement Bar (Бегущая строка)
+   Admin Chat Box Popup (20-25 seconds duration)
    ========================================================================== */
 
-.announcement-bar {
+.admin-chat-popup {
     display: none;
-    background: #1f6feb;
-    color: #ffffff;
-    padding: 8px 16px;
-    font-size: 0.9rem;
-    font-weight: 600;
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 10000;
+    width: 380px;
+    max-width: calc(100vw - 32px);
+    background: #161b22;
+    border: 1px solid #30363d;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6), 0 0 24px rgba(47, 129, 247, 0.15);
+    border-radius: var(--radius-lg);
     overflow: hidden;
-    position: relative;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    animation: chatSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.announcement-marquee {
-    white-space: nowrap;
-    display: inline-block;
-    animation: marquee 18s linear infinite;
+.admin-chat-popup.closing {
+    animation: chatSlideOut 0.25s ease forwards;
 }
 
-@keyframes marquee {
-    0% { transform: translateX(100%); }
-    100% { transform: translateX(-100%); }
+@keyframes chatSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes chatSlideOut {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(20px) scale(0.96);
+    }
+}
+
+.chat-popup-inner {
+    display: flex;
+    gap: 12px;
+    padding: 14px 16px;
+    align-items: flex-start;
+}
+
+.chat-popup-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #8957e5, #1f6feb);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    overflow: hidden;
+}
+
+.chat-popup-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.chat-popup-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.chat-popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.chat-popup-author-badge {
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #d2a8ff;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.chat-popup-time {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.chat-popup-close-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0 4px;
+    border-radius: 4px;
+    line-height: 1;
+    margin-left: 4px;
+}
+
+.chat-popup-close-btn:hover {
+    color: var(--text-main);
+    background: var(--bg-subtle);
+}
+
+.chat-popup-message {
+    font-size: 0.94rem;
+    color: var(--text-main);
+    line-height: 1.45;
+    word-break: break-word;
+    font-weight: 500;
+}
+
+.chat-popup-progress-container {
+    width: 100%;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.chat-popup-progress-bar {
+    height: 100%;
+    background: #2f81f7;
+    width: 100%;
 }
 
 /* ==========================================================================
@@ -744,14 +853,65 @@ body {
     color: var(--text-secondary);
 }
 
+.solution-links-chips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
 .solution-source-link {
-    color: var(--accent-blue);
-    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
     font-size: 0.75rem;
+    font-weight: 500;
+    text-decoration: none;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    transition: var(--transition);
 }
 
 .solution-source-link:hover {
-    text-decoration: underline;
+    border-color: var(--border-hover);
+    color: var(--text-main);
+    text-decoration: none;
+}
+
+.solution-source-link.deepseek-chip {
+    color: #58a6ff;
+    border-color: #1f4277;
+    background: rgba(56, 139, 253, 0.1);
+}
+
+.solution-source-link.deepseek-chip:hover {
+    border-color: #58a6ff;
+    background: rgba(56, 139, 253, 0.2);
+}
+
+.solution-source-link.alice-chip {
+    color: #bc8cff;
+    border-color: #523778;
+    background: rgba(137, 87, 229, 0.1);
+}
+
+.solution-source-link.alice-chip:hover {
+    border-color: #bc8cff;
+    background: rgba(137, 87, 229, 0.2);
+}
+
+.solution-source-link.gdz-chip {
+    color: #3fb950;
+    border-color: #1e5828;
+    background: rgba(35, 134, 54, 0.1);
+}
+
+.solution-source-link.gdz-chip:hover {
+    border-color: #3fb950;
+    background: rgba(35, 134, 54, 0.2);
 }
 
 .solution-text {
@@ -777,6 +937,7 @@ body {
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
+    align-items: center;
 }
 
 .mini-tool-btn {
@@ -800,6 +961,43 @@ body {
     background: #2b313a;
 }
 
+.mini-tool-btn.active-link {
+    font-weight: 600;
+}
+
+.mini-tool-btn.active-link.deepseek-btn {
+    color: #79c0ff;
+    border-color: #1f4277;
+    background: rgba(56, 139, 253, 0.12);
+}
+
+.mini-tool-btn.active-link.deepseek-btn:hover {
+    background: rgba(56, 139, 253, 0.25);
+    border-color: #58a6ff;
+}
+
+.mini-tool-btn.active-link.alice-btn {
+    color: #d2a8ff;
+    border-color: #523778;
+    background: rgba(137, 87, 229, 0.12);
+}
+
+.mini-tool-btn.active-link.alice-btn:hover {
+    background: rgba(137, 87, 229, 0.25);
+    border-color: #bc8cff;
+}
+
+.mini-tool-btn.active-link.gdz-btn {
+    color: #7ee787;
+    border-color: #1e5828;
+    background: rgba(35, 134, 54, 0.12);
+}
+
+.mini-tool-btn.active-link.gdz-btn:hover {
+    background: rgba(35, 134, 54, 0.25);
+    border-color: #3fb950;
+}
+
 .mini-tool-btn.admin-upload-btn {
     color: #d2a8ff;
     border-color: #4b3273;
@@ -809,6 +1007,23 @@ body {
 .mini-tool-btn.admin-upload-btn:hover {
     background: #2d1f45;
     border-color: var(--accent-purple);
+}
+
+.edit-hw-btn {
+    padding: 4px 7px;
+    font-size: 0.75rem;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.edit-hw-btn:hover {
+    color: var(--text-main);
+    border-color: var(--border-hover);
+    background: #2b313a;
 }
 
 .delete-hw-btn {

@@ -156,27 +156,43 @@ class AdminAbuse {
             });
         }
 
-        // Announcement Broadcast
-        const setBannerBtn = document.getElementById('set-banner-btn');
-        const clearBannerBtn = document.getElementById('clear-banner-btn');
-        const bannerInput = document.getElementById('admin-banner-input');
+        // Admin Live Chat Broadcast (20-25s)
+        const sendChatBtn = document.getElementById('send-chat-btn');
+        const clearChatBtn = document.getElementById('clear-chat-btn');
+        const chatInput = document.getElementById('admin-chat-input');
 
-        if (setBannerBtn && bannerInput) {
-            setBannerBtn.addEventListener('click', () => {
-                const val = bannerInput.value.trim();
+        if (sendChatBtn && chatInput) {
+            const sendHandler = () => {
+                const val = chatInput.value.trim();
                 if (val) {
-                    window.app.showAnnouncement('📢 ОБЪЯВЛЕНИЕ АДМИНА: ' + val);
-                    if (window.soundEngine) window.soundEngine.playAirHorn();
+                    const author = (window.authManager && window.authManager.currentUser && window.authManager.currentUser.displayName) || 'Админ';
+                    const avatar = (window.authManager && window.authManager.currentUser && window.authManager.currentUser.photoURL) || '👑';
+                    window.app.showAdminChatMessage(val, author, avatar, 25000);
                     if (window.effectsManager) window.effectsManager.confettiBurst();
-                    alert('Объявление опубликовано на сайте!');
+                    window.app.showToast('Сообщение отправлено в чат на 25 секунд!', '💬');
+                    chatInput.value = '';
+
+                    // Close admin modal so admin sees the chat box immediately
+                    const modal = document.getElementById('admin-modal');
+                    if (modal) modal.classList.remove('active');
+                }
+            };
+
+            sendChatBtn.addEventListener('click', sendHandler);
+
+            chatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    sendHandler();
                 }
             });
         }
 
-        if (clearBannerBtn) {
-            clearBannerBtn.addEventListener('click', () => {
-                window.app.hideAnnouncement();
-                if (bannerInput) bannerInput.value = '';
+        if (clearChatBtn) {
+            clearChatBtn.addEventListener('click', () => {
+                window.app.hideAdminChatMessage();
+                if (chatInput) chatInput.value = '';
+                window.app.showToast('Чат-бокс скрыт', '🗑️');
             });
         }
 
@@ -339,6 +355,16 @@ class AdminAbuse {
         const adminBtn = document.getElementById('open-admin-btn');
         if (adminBtn) {
             adminBtn.style.display = 'inline-flex';
+        }
+
+        const quickAddBtn = document.getElementById('quick-add-lesson-btn');
+        if (quickAddBtn) {
+            quickAddBtn.style.display = 'inline-flex';
+        }
+
+        const addHwBtn = document.getElementById('add-hw-btn');
+        if (addHwBtn) {
+            addHwBtn.style.display = 'inline-flex';
         }
 
         const badge = document.getElementById('admin-badge-indicator');
