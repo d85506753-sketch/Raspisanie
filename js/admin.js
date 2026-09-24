@@ -28,7 +28,6 @@ class AdminAbuse {
     init() {
         this.bindShortcuts();
         this.bindUI();
-        this.setupTacoMascot();
     }
 
     bindShortcuts() {
@@ -258,11 +257,8 @@ class AdminAbuse {
                 const modal = document.getElementById('admin-modal');
                 if (modal) modal.classList.remove('active');
 
-                const lessonModal = document.getElementById('lesson-modal');
-                if (lessonModal) {
-                    const daySelect = document.getElementById('lesson-day-select');
-                    if (daySelect) daySelect.value = window.app.activeDay;
-                    lessonModal.classList.add('active');
+                if (window.app) {
+                    window.app.openAddLessonModal(window.app.activeDay);
                 }
             });
         }
@@ -314,28 +310,49 @@ class AdminAbuse {
     }
 
     openModal() {
-        if (window.authManager) window.authManager.revealAdminButton();
+        const isAdmin = (window.authManager && window.authManager.isAdmin) || this.isAuthenticated;
+        const loginSection = document.getElementById('admin-login-section');
+        const panelSection = document.getElementById('admin-panel-section');
+
+        if (isAdmin) {
+            this.unlock(false);
+            if (loginSection) loginSection.style.display = 'none';
+            if (panelSection) panelSection.style.display = 'block';
+        } else {
+            if (loginSection) loginSection.style.display = 'block';
+            if (panelSection) panelSection.style.display = 'none';
+        }
+
         const modal = document.getElementById('admin-modal');
         if (modal) {
             modal.classList.add('active');
         }
     }
 
-    unlock() {
+    unlock(showCelebration = true) {
         this.isAuthenticated = true;
-        if (window.authManager) window.authManager.revealAdminButton();
         const loginSection = document.getElementById('admin-login-section');
         const panelSection = document.getElementById('admin-panel-section');
         if (loginSection) loginSection.style.display = 'none';
         if (panelSection) panelSection.style.display = 'block';
 
+        const adminBtn = document.getElementById('open-admin-btn');
+        if (adminBtn) {
+            adminBtn.style.display = 'inline-flex';
+        }
+
         const badge = document.getElementById('admin-badge-indicator');
         if (badge) badge.style.display = 'flex';
 
-        window.app.showToast('Режим Администратора активен! Вы можете управлять уроками.', '⚡');
+        if (window.app) {
+            window.app.renderSchedule();
+            window.app.renderHomework();
+        }
 
-        if (window.soundEngine) window.soundEngine.playSuccess();
-        if (window.effectsManager) window.effectsManager.confettiBurst();
+        if (showCelebration && window.app) {
+            window.app.showToast('Панель администратора активирована', '⚙️');
+            if (window.soundEngine) window.soundEngine.playSuccess();
+        }
     }
 
     // --- INLINE LIVE EDIT ---
@@ -438,18 +455,6 @@ class AdminAbuse {
         window.app.renderSchedule();
         if (window.soundEngine) window.soundEngine.playVineBoom();
         window.app.showToast('Кабинеты заменены на секретные локации!', '🏰');
-    }
-
-    applyPresetTrollTeachers() {
-        const curDay = window.app.activeDay;
-        const trollNames = ['Шрек Болотный', 'Илон Маск', 'Гигачад Евгеньевич', 'Дамблдор А.П.', 'Нео из Матрицы', 'Джон Уик'];
-        (window.app.schedule[curDay] || []).forEach((l, i) => {
-            l.teacher = trollNames[i % trollNames.length];
-        });
-        window.app.saveState();
-        window.app.renderSchedule();
-        if (window.soundEngine) window.soundEngine.playVineBoom();
-        alert('Учителя заменены на легендарных персонажей!');
     }
 
     hackGrades() {

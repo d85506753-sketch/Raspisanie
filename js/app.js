@@ -81,6 +81,11 @@ class AppManager {
         this.init();
     }
 
+    isUserAdmin() {
+        return (window.authManager && window.authManager.isAdmin) || 
+               (window.adminAbuse && window.adminAbuse.isAuthenticated);
+    }
+
     init() {
         this.loadState();
         this.detectCurrentDay();
@@ -255,16 +260,21 @@ class AppManager {
             });
         }
 
-        // Add Lesson button
+        // Add Lesson buttons
         const addLessonBtn = document.getElementById('add-lesson-btn');
+        const quickAddBtn = document.getElementById('quick-add-lesson-btn');
         const lessonModal = document.getElementById('lesson-modal');
         const closeLessonModal = document.getElementById('close-lesson-modal');
         const lessonForm = document.getElementById('lesson-form');
 
-        if (addLessonBtn && lessonModal) {
+        if (addLessonBtn) {
             addLessonBtn.addEventListener('click', () => {
-                lessonModal.classList.add('active');
-                if (window.soundEngine) window.soundEngine.playLaser();
+                this.openAddLessonModal(this.activeDay);
+            });
+        }
+        if (quickAddBtn) {
+            quickAddBtn.addEventListener('click', () => {
+                this.openAddLessonModal(this.activeDay);
             });
         }
         if (closeLessonModal && lessonModal) {
@@ -284,24 +294,38 @@ class AppManager {
                 const subject = document.getElementById('lesson-subject-input').value.trim();
                 const time = document.getElementById('lesson-time-input').value.trim() || '08:30 - 09:15';
                 const room = document.getElementById('lesson-room-input').value.trim() || '—';
+                const editIndexInput = document.getElementById('lesson-edit-index');
+                const editIndex = editIndexInput ? parseInt(editIndexInput.value, 10) : -1;
 
                 if (!subject) return;
 
-                const curLessons = this.schedule[targetDay] || [];
-                const newNum = curLessons.length + 1;
+                if (editIndex >= 0 && this.schedule[targetDay] && this.schedule[targetDay][editIndex]) {
+                    // Update existing lesson
+                    this.schedule[targetDay][editIndex].subject = subject;
+                    this.schedule[targetDay][editIndex].time = time;
+                    this.schedule[targetDay][editIndex].room = room;
+                    this.saveState();
+                    this.renderSchedule();
+                    this.showToast(`Урок «${subject}» обновлен!`, '✏️');
+                    if (window.soundEngine) window.soundEngine.playSuccess();
+                } else {
+                    // Add new lesson
+                    const curLessons = this.schedule[targetDay] || [];
+                    const newNum = curLessons.length + 1;
+                    this.addLesson(targetDay, {
+                        id: `${targetDay}_${Date.now()}`,
+                        num: newNum,
+                        time,
+                        subject,
+                        room
+                    });
+                }
 
-                this.addLesson(targetDay, {
-                    id: `${targetDay}_${Date.now()}`,
-                    num: newNum,
-                    time,
-                    subject,
-                    room
-                });
-
-                // Switch to that day to view the newly added lesson
+                // Switch to that day to view the updated lesson
                 this.setActiveDay(targetDay);
 
                 lessonForm.reset();
+                if (editIndexInput) editIndexInput.value = '-1';
                 lessonModal.classList.remove('active');
             });
         }
@@ -347,10 +371,72 @@ class AppManager {
         this.renderSchedule();
     }
 
+    openAddLessonModal(day = null) {
+        if (!this.isUserAdmin()) {
+            alert('Только администратор может добавлять уроки!');
+            return;
+        }
+        const modal = document.getElementById('lesson-modal');
+        const modalTitle = document.getElementById('lesson-modal-title');
+        const editIndexInput = document.getElementById('lesson-edit-index');
+        const daySelect = document.getElementById('lesson-day-select');
+        const subjectInput = document.getElementById('lesson-subject-input');
+        const timeInput = document.getElementById('lesson-time-input');
+        const roomInput = document.getElementById('lesson-room-input');
+
+        if (modalTitle) modalTitle.innerText = '➕ Добавить урок';
+        if (editIndexInput) editIndexInput.value = '-1';
+        if (daySelect) daySelect.value = day || this.activeDay;
+        if (subjectInput) subjectInput.value = '';
+        if (timeInput) timeInput.value = '08:30 - 09:15';
+        if (roomInput) roomInput.value = '';
+
+        if (modal) modal.classList.add('active');
+        if (window.soundEngine) window.soundEngine.playLaser();
+    }
+
+    openEditLessonModal(day, index) {
+        if (!this.isUserAdmin()) {
+            alert('Только администратор может изменять уроки!');
+            return;
+        }
+        const lesson = (this.schedule[day] || [])[index];
+        if (!lesson) return;
+
+        const modal = document.getElementById('lesson-modal');
+        const modalTitle = document.getElementById('lesson-modal-title');
+        const editIndexInput = document.getElementById('lesson-edit-index');
+        const daySelect = document.getElementById('lesson-day-select');
+        const subjectInput = document.getElementById('lesson-subject-input');
+        const timeInput = document.getElementById('lesson-time-input');
+        const roomInput = document.getElementById('lesson-room-input');
+
+        if (modalTitle) modalTitle.innerText = '✏️ Редактировать урок';
+        if (editIndexInput) editIndexInput.value = index;
+        if (daySelect) daySelect.value = day;
+        if (subjectInput) subjectInput.value = lesson.subject || '';
+        if (timeInput) timeInput.value = lesson.time || '08:30 - 09:15';
+        if (roomInput) roomInput.value = lesson.room || '';
+
+        if (modal) modal.classList.add('active');
+        if (window.soundEngine) window.soundEngine.playLaser();
+    }
+
     renderSchedule() {
         const container = document.getElementById('schedule-lessons-list');
         const dayTitle = document.getElementById('current-day-title');
+        const quickAddBtn = document.getElementById('quick-add-lesson-btn');
+        const adminBadge = document.getElementById('admin-badge-indicator');
         if (!container) return;
+
+        const isAdmin = this.isUserAdmin();
+
+        if (quickAddBtn) {
+            quickAddBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+        }
+        if (adminBadge) {
+            adminBadge.style.display = isAdmin ? 'flex' : 'none';
+        }
 
         if (dayTitle) {
             dayTitle.innerText = `${this.dayNames[this.activeDay]} (${(this.schedule[this.activeDay] || []).length} уроков)`;
@@ -361,8 +447,9 @@ class AppManager {
             container.innerHTML = `
                 <div class="empty-state">
                     <span class="empty-icon">🏖️</span>
-                    <h3>На этот день уроков нет!</h3>
-                    <p>Отдыхаем, едим тако или добавляем уроки через кнопку "+ Добавить урок"</p>
+                    <h3>На этот день уроков нет</h3>
+                    <p>${isAdmin ? 'Нажмите «+ Добавить урок», чтобы добавить уроки в расписание' : 'Уроков пока не добавлено'}</p>
+                    ${isAdmin ? `<button class="cool-btn primary" style="margin-top: 12px;" onclick="app.openAddLessonModal('${this.activeDay}')">+ Добавить урок</button>` : ''}
                 </div>
             `;
             return;
@@ -371,21 +458,24 @@ class AppManager {
         let html = '';
         lessons.forEach((l, index) => {
             html += `
-                <div class="lesson-card glass-panel" data-id="${l.id}" data-day="${this.activeDay}" data-index="${index}">
+                <div class="lesson-card" data-id="${l.id}" data-day="${this.activeDay}" data-index="${index}">
                     <div class="lesson-number-badge">${l.num}</div>
                     <div class="lesson-content">
                         <div class="lesson-header-row">
-                            <h4 class="lesson-subject ${window.adminAbuse && window.adminAbuse.isLiveEdit ? 'editable' : ''}" data-field="subject" title="Кликните для изменения в режиме редактирования">${this.escapeHtml(l.subject)}</h4>
-                            <span class="lesson-time"><i class="icon-clock">⏰</i> ${this.escapeHtml(l.time)}</span>
+                            <h4 class="lesson-subject ${window.adminAbuse && window.adminAbuse.isLiveEdit ? 'editable' : ''}" data-field="subject">${this.escapeHtml(l.subject)}</h4>
+                            <span class="lesson-time">⏰ ${this.escapeHtml(l.time)}</span>
                         </div>
                         <div class="lesson-details">
-                            <span class="lesson-room ${window.adminAbuse && window.adminAbuse.isLiveEdit ? 'editable' : ''}" data-field="room" title="Кабинет">🏛️ Кабинет: <strong>${this.escapeHtml(l.room || '—')}</strong></span>
+                            <span class="lesson-room ${window.adminAbuse && window.adminAbuse.isLiveEdit ? 'editable' : ''}" data-field="room">Кабинет: <strong>${this.escapeHtml(l.room || '—')}</strong></span>
                         </div>
                     </div>
                     <div class="lesson-actions">
-                        <button class="icon-btn search-gdz-btn" title="Искать ГДЗ по предмету" onclick="app.searchGDZ('${this.escapeQuotes(l.subject)}')">📚 ГДЗ</button>
-                        <button class="icon-btn deepseek-prompt-btn" title="Спросить DeepSeek" onclick="app.askAIForSubject('${this.escapeQuotes(l.subject)}')">🤖 AI</button>
-                        ${window.adminAbuse && window.adminAbuse.isLiveEdit ? `<button class="icon-btn delete-lesson-btn" style="color:var(--danger); border-color:var(--danger);" title="Удалить урок" onclick="app.deleteLesson('${this.activeDay}', ${index})">🗑️</button>` : ''}
+                        <button class="icon-btn" title="Искать ГДЗ" onclick="app.searchGDZ('${this.escapeQuotes(l.subject)}')">📚 ГДЗ</button>
+                        <button class="icon-btn" title="Спросить DeepSeek" onclick="app.askAIForSubject('${this.escapeQuotes(l.subject)}')">🤖 AI</button>
+                        ${isAdmin ? `
+                            <button class="icon-btn edit-lesson-btn" title="Редактировать урок" onclick="app.openEditLessonModal('${this.activeDay}', ${index})">✏️</button>
+                            <button class="icon-btn delete-lesson-btn" title="Удалить урок" onclick="app.deleteLesson('${this.activeDay}', ${index})">🗑️</button>
+                        ` : ''}
                     </div>
                 </div>
             `;
@@ -394,7 +484,6 @@ class AppManager {
         container.innerHTML = html;
         this.updateCurrentLessonHighlight();
 
-        // If live edit mode is active, make elements editable
         if (window.adminAbuse && window.adminAbuse.isLiveEdit) {
             window.adminAbuse.attachInlineEditHandlers();
         }
@@ -403,6 +492,8 @@ class AppManager {
     renderHomework() {
         const container = document.getElementById('homework-list');
         if (!container) return;
+
+        const isAdmin = this.isUserAdmin();
 
         let filtered = this.homework;
         if (this.hwFilter === 'active') {
@@ -433,7 +524,7 @@ class AppManager {
         let html = '';
         filtered.forEach(hw => {
             html += `
-                <div class="hw-card glass-panel ${hw.completed ? 'completed' : ''} ${hw.urgent ? 'urgent-border' : ''}" data-id="${hw.id}">
+                <div class="hw-card ${hw.completed ? 'completed' : ''} ${hw.urgent ? 'urgent-border' : ''}" data-id="${hw.id}">
                     <div class="hw-checkbox-wrapper">
                         <input type="checkbox" id="check_${hw.id}" ${hw.completed ? 'checked' : ''} onchange="app.toggleHomework('${hw.id}')">
                         <label for="check_${hw.id}"></label>
@@ -454,10 +545,10 @@ class AppManager {
                                 <div id="solution_box_${hw.id}" class="solution-content-box" style="display: none;">
                                     <div class="solution-header">
                                         <span class="solution-source-badge source-${(hw.solution.source || 'ai').toLowerCase()}">${this.escapeHtml(hw.solution.source)}</span>
-                                        ${hw.solution.link ? `<a href="${this.escapeHtml(hw.solution.link)}" target="_blank" rel="noopener" class="solution-source-link">🔗 Ссылка на источник</a>` : ''}
+                                        ${hw.solution.link ? `<a href="${this.escapeHtml(hw.solution.link)}" target="_blank" rel="noopener" class="solution-source-link">🔗 Источник</a>` : ''}
                                         <button class="mini-tool-btn" onclick="app.copySolution('${hw.id}')">📋 Скопировать</button>
                                     </div>
-                                    <div class="solution-text">${this.escapeHtml(hw.solution.text).replace(/\n/g, '<br>')}</div>
+                                    <div class="solution-text">${this.escapeHtml(hw.solution.text)}</div>
                                 </div>
                             </div>
                         ` : ''}
@@ -465,20 +556,23 @@ class AppManager {
                         <div class="hw-card-footer">
                             <div class="hw-ai-helpers">
                                 <button class="mini-tool-btn" onclick="app.openDeepSeekWithPrompt('${this.escapeQuotes(hw.subject)}', '${this.escapeQuotes(hw.text)}')">
-                                    <span class="icon">🧠</span> DeepSeek Реши
+                                    🧠 DeepSeek
                                 </button>
                                 <button class="mini-tool-btn" onclick="app.openAliceWithPrompt('${this.escapeQuotes(hw.subject)}', '${this.escapeQuotes(hw.text)}')">
-                                    <span class="icon">🟣</span> Алиса Помоги
+                                    🟣 Алиса
                                 </button>
                                 <button class="mini-tool-btn" onclick="app.searchGDZ('${this.escapeQuotes(hw.subject)}')">
-                                    <span class="icon">📖</span> ГДЗ
+                                    📚 ГДЗ
                                 </button>
-                                <!-- Admin Upload Answer button -->
-                                <button class="mini-tool-btn admin-upload-btn" onclick="app.openAnswerModal('${hw.id}')" title="Загрузить готовый ответ от DeepSeek, Алисы или ГДЗ">
-                                    📥 ${hw.solution ? 'Изменить ответ' : 'Загрузить ответ'}
-                                </button>
+                                ${isAdmin ? `
+                                    <button class="mini-tool-btn admin-upload-btn" onclick="app.openAnswerModal('${hw.id}')" title="Загрузить готовый ответ от DeepSeek, Алисы или ГДЗ">
+                                        📥 ${hw.solution ? 'Изменить ответ' : 'Загрузить ответ'}
+                                    </button>
+                                ` : ''}
                             </div>
-                            <button class="delete-hw-btn" title="Удалить задачу" onclick="app.deleteHomework('${hw.id}')">🗑️</button>
+                            ${isAdmin ? `
+                                <button class="delete-hw-btn" title="Удалить задачу" onclick="app.deleteHomework('${hw.id}')">🗑️</button>
+                            ` : ''}
                         </div>
                     </div>
                 </div>
@@ -534,6 +628,11 @@ class AppManager {
     }
 
     openAnswerModal(hwId) {
+        if (!this.isUserAdmin()) {
+            alert('Только администратор может загружать решения!');
+            return;
+        }
+
         const item = this.homework.find(h => h.id === hwId);
         if (!item) return;
 
@@ -565,12 +664,17 @@ class AppManager {
     }
 
     attachSolution(hwId, solutionData) {
+        if (!this.isUserAdmin()) {
+            alert('Только администратор может загружать решения!');
+            return;
+        }
+
         const item = this.homework.find(h => h.id === hwId);
         if (item) {
             item.solution = solutionData;
             this.saveState();
             this.renderHomework();
-            this.showToast(`Ответ от "${solutionData.source}" сохранен!`, '💡');
+            this.showToast(`Ответ сохранен!`, '💡');
             if (window.soundEngine) window.soundEngine.playSuccess();
             if (window.effectsManager) window.effectsManager.confettiBurst();
         }

@@ -54,11 +54,14 @@ class AuthManager {
         const userName = document.getElementById('user-name');
         const userRole = document.getElementById('user-role');
         const adminBtn = document.getElementById('open-admin-btn');
+        const quickAddBtn = document.getElementById('quick-add-lesson-btn');
+        const adminBadge = document.getElementById('admin-badge-indicator');
 
         if (user) {
             // Check if user is Admin
-            const email = (user.email || '').toLowerCase();
-            const isAdminEmail = (window.ADMIN_EMAILS || []).some(e => e.toLowerCase() === email);
+            const email = (user.email || '').toLowerCase().trim();
+            const adminList = (window.ADMIN_EMAILS || []).map(e => e.toLowerCase().trim());
+            const isAdminEmail = adminList.includes(email);
             const isLocalAdmin = user.role === 'admin';
 
             this.isAdmin = isAdminEmail || isLocalAdmin;
@@ -71,30 +74,58 @@ class AuthManager {
                 if (userRole) {
                     userRole.innerText = this.isAdmin ? '👑 Админ' : '🎓 Ученик';
                     userRole.className = `role-badge ${this.isAdmin ? 'admin-role' : 'student-role'}`;
+                    if (this.isAdmin) {
+                        userRole.style.cursor = 'pointer';
+                        userRole.title = 'Нажмите, чтобы открыть Панель Админа';
+                        userRole.onclick = () => {
+                            if (window.adminAbuse) window.adminAbuse.openModal();
+                        };
+                    } else {
+                        userRole.style.cursor = 'default';
+                        userRole.title = '';
+                        userRole.onclick = null;
+                    }
                 }
             }
 
-            // REVEAL ADMIN BUTTON ONLY IF ADMIN
+            // REVEAL ADMIN BUTTONS ONLY IF ADMIN
             if (adminBtn) {
-                if (this.isAdmin) {
-                    adminBtn.style.display = 'inline-flex';
-                } else {
-                    adminBtn.style.display = 'none';
-                }
+                adminBtn.style.display = this.isAdmin ? 'inline-flex' : 'none';
+            }
+            if (quickAddBtn) {
+                quickAddBtn.style.display = this.isAdmin ? 'inline-flex' : 'none';
+            }
+            if (adminBadge) {
+                adminBadge.style.display = this.isAdmin ? 'flex' : 'none';
             }
 
-            if (window.app) window.app.renderSchedule();
-            if (window.app) window.app.renderHomework();
+            // Auto-unlock admin abuse panel
+            if (this.isAdmin && window.adminAbuse) {
+                window.adminAbuse.unlock(false);
+            }
+
+            if (window.app) {
+                window.app.renderSchedule();
+                window.app.renderHomework();
+            }
         } else {
             this.isAdmin = false;
             if (authBtn) authBtn.style.display = 'inline-flex';
             if (userBadge) userBadge.style.display = 'none';
 
-            // By default hidden for guests!
+            // Hidden for guests
             if (adminBtn) adminBtn.style.display = 'none';
+            if (quickAddBtn) quickAddBtn.style.display = 'none';
+            if (adminBadge) adminBadge.style.display = 'none';
 
-            if (window.app) window.app.renderSchedule();
-            if (window.app) window.app.renderHomework();
+            if (window.adminAbuse) {
+                window.adminAbuse.isAuthenticated = false;
+            }
+
+            if (window.app) {
+                window.app.renderSchedule();
+                window.app.renderHomework();
+            }
         }
     }
 
@@ -218,7 +249,7 @@ class AuthManager {
     }
 
     executeLocalLogin(email) {
-        const isAdmin = (window.ADMIN_EMAILS || []).some(e => e.toLowerCase() === email.toLowerCase()) || email.includes('admin');
+        const isAdmin = (window.ADMIN_EMAILS || []).some(e => e.toLowerCase() === email.toLowerCase());
         const fakeUser = {
             uid: 'local_' + Date.now(),
             email,
@@ -232,7 +263,7 @@ class AuthManager {
     }
 
     executeLocalRegister(email, displayName) {
-        const isAdmin = (window.ADMIN_EMAILS || []).some(e => e.toLowerCase() === email.toLowerCase()) || email.includes('admin');
+        const isAdmin = (window.ADMIN_EMAILS || []).some(e => e.toLowerCase() === email.toLowerCase());
         const fakeUser = {
             uid: 'local_' + Date.now(),
             email,
@@ -270,7 +301,15 @@ class AuthManager {
             localStorage.removeItem('curie_local_user');
             this.handleAuthStateChange(null);
         }
-        if (window.app) window.app.showToast('Вы вышли из аккаунта', '🔒');
+        this.isAdmin = false;
+        if (window.adminAbuse) {
+            window.adminAbuse.isAuthenticated = false;
+        }
+        if (window.app) {
+            window.app.renderSchedule();
+            window.app.renderHomework();
+            window.app.showToast('Вы вышли из аккаунта', '🔒');
+        }
     }
 
     // Force reveal admin button (called by secret gesture taco/Ctrl+Shift+A)

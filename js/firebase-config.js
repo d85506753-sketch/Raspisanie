@@ -14,11 +14,10 @@ window.FIREBASE_CONFIG = {
 };
 
 // Список email-адресов администраторов
-// Любой аккаунт с этим email получит автоматические права Admin Abuse!
+// И ТОЛЬКО ЭТИ ДВА EMAIL имеют права Администратора!
 window.ADMIN_EMAILS = [
-    "admin@curieschedule.local",
-    "admin@gmail.com",
-    "d85506753@gmail.com"
+    "roganinstepan36@gmail.com",
+    "steamvichsteam@gmail.com"
 ];
 
 // Проверка: заполнен ли конфиг Firebase пользователем
