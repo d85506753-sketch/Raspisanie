@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CurieSchedule — Расписание, ДЗ & Admin Abuse 🌮</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌮</text></svg>">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0d1117">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Admin Broadcast Announcement Bar -->
+    <div id="announcement-bar" class="announcement-bar">
+        <div id="announcement-marquee" class="announcement-marquee">
+            📢 Добро пожаловать! Завтра уроки по расписанию. Админ следит за вами! 🌮
+        </div>
+    </div>
+
+    <div class="app-container">
+        <!-- Site Header -->
+        <header class="site-header glass-panel">
+            <div class="logo-wrapper" id="site-logo" title="Кликни 5 раз для секретного входа в Админку!">
+                <div class="logo-icon">🌮</div>
+                <div>
+                    <h1 class="brand-title">CurieSchedule</h1>
+                    <p class="brand-subtitle">Умное расписание, ДЗ и Секретная Админка ⚡</p>
+                </div>
+            </div>
+
+            <div class="header-controls">
+                <button class="cool-btn" id="toggle-sound-btn" title="Включить / Выключить звук">
+                    🔊 Звук
+                </button>
+                <button class="cool-btn" id="share-link-btn" title="Скопировать ссылку с вашим расписанием для одноклассников">
+                    🔗 Поделиться
+                </button>
+                <button class="cool-btn" id="export-json-btn" title="Сохранить файл расписания в JSON">
+                    💾 Экспорт
+                </button>
+                <label class="cool-btn" title="Загрузить расписание из файла JSON" style="cursor: pointer;">
+                    📂 Импорт
+                    <input type="file" id="import-file-input" accept=".json" style="display: none;">
+                </label>
+                <!-- Account Auth / Profile Badge -->
+                <button class="cool-btn" id="header-auth-btn" title="Войти в аккаунт Firebase">
+                    👤 Войти
+                </button>
+                <div id="header-user-badge" class="header-user-badge" style="display: none;">
+                    <div id="user-avatar" class="user-avatar">A</div>
+                    <div class="user-meta">
+                        <span id="user-name" class="user-name">User</span>
+                        <span id="user-role" class="role-badge student-role">Ученик</span>
+                    </div>
+                    <button id="user-logout-btn" class="logout-icon-btn" title="Выйти из аккаунта">🚪</button>
+                </div>
+                <!-- Admin Abuse button (HIDDEN by default, visible only to Admin!) -->
+                <button class="cool-btn admin-glow" id="open-admin-btn" style="display: none;">
+                    ⚡ Admin Abuse
+                </button>
+            </div>
+        </header>
+
+        <!-- AI & GDZ Quick Launch Dock -->
+        <section class="dock-section">
+            <div class="dock-header">
+                <span class="dock-title">🚀 Быстрые помощники для учебы & ИИ</span>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">Кликните, чтобы сразу открыть</span>
+            </div>
+            <div class="dock-grid">
+                <!-- DeepSeek -->
+                <a href="https://chat.deepseek.com" target="_blank" rel="noopener noreferrer" class="dock-card deepseek">
+                    <div class="dock-icon">🧠</div>
+                    <div class="dock-info">
+                        <h4>DeepSeek AI</h4>
+                        <p>Решение сложных задач и сочинений</p>
+                    </div>
+                    <div class="dock-arrow">↗</div>
+                </a>
+
+                <!-- Alisa AI -->
+                <a href="https://a.ya.ru" target="_blank" rel="noopener noreferrer" class="dock-card alice">
+                    <div class="dock-icon">🟣</div>
+                    <div class="dock-info">
+                        <h4>Яндекс Алиса AI</h4>
+                        <p>Быстрые ответы и поиск по темам</p>
+                    </div>
+                    <div class="dock-arrow">↗</div>
+                </a>
+
+                <!-- GDZ.ru -->
+                <a href="https://gdz.ru" target="_blank" rel="noopener noreferrer" class="dock-card gdz">
+                    <div class="dock-icon">📚</div>
+                    <div class="dock-info">
+                        <h4>ГДЗ.ру</h4>
+                        <p>Готовые ответы к учебникам</p>
+                    </div>
+                    <div class="dock-arrow">↗</div>
+                </a>
+
+                <!-- Resheba -->
+                <a href="https://resheba.me" target="_blank" rel="noopener noreferrer" class="dock-card resheba">
+                    <div class="dock-icon">📖</div>
+                    <div class="dock-info">
+                        <h4>Решеба</h4>
+                        <p>Подробные решения и номера</p>
+                    </div>
+                    <div class="dock-arrow">↗</div>
+                </a>
+            </div>
+        </section>
+
+        <!-- Days Navigation Tabs -->
+        <nav class="days-nav-wrapper">
+            <div class="days-nav">
+                <button class="day-btn active" data-day="mon">
+                    <span class="day-short">ПН</span>
+                    <span class="day-full">Понедельник</span>
+                </button>
+                <button class="day-btn" data-day="tue">
+                    <span class="day-short">ВТ</span>
+                    <span class="day-full">Вторник</span>
+                </button>
+                <button class="day-btn" data-day="wed">
+                    <span class="day-short">СР</span>
+                    <span class="day-full">Среда</span>
+                </button>
+                <button class="day-btn" data-day="thu">
+                    <span class="day-short">ЧТ</span>
+                    <span class="day-full">Четверг</span>
+                </button>
+                <button class="day-btn" data-day="fri">
+                    <span class="day-short">ПТ</span>
+                    <span class="day-full">Пятница</span>
+                </button>
+                <button class="day-btn" data-day="sat">
+                    <span class="day-short">СБ</span>
+                    <span class="day-full">Суббота</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Workspace Grid -->
+        <main class="main-grid">
+            <!-- Left Column: Schedule -->
+            <section class="section-card glass-panel">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">📅 Расписание уроков</h2>
+                        <span id="current-day-title" style="color: var(--accent-cyan); font-weight: 600; font-size: 0.9rem;">Понедельник</span>
+                    </div>
+                    <div id="admin-badge-indicator" style="display: none; align-items: center; gap: 6px;">
+                        <span style="font-size: 0.8rem; background: var(--accent-magenta); color: #fff; padding: 4px 10px; border-radius: 6px; font-weight: 700;">Режим Админа ⚡</span>
+                    </div>
+                </div>
+
+                <div id="schedule-lessons-list" class="lessons-list">
+                    <!-- Lessons rendered dynamically by app.js -->
+                </div>
+            </section>
+
+            <!-- Right Column: Homework Tracker -->
+            <section class="section-card glass-panel">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">📝 Домашнее задание</h2>
+                        <span id="hw-stat-text" style="color: var(--text-muted); font-size: 0.85rem;">Загрузка...</span>
+                    </div>
+                    <button class="cool-btn primary" id="add-hw-btn">
+                        + Добавить ДЗ
+                    </button>
+                </div>
+
+                <!-- Progress bar -->
+                <div class="hw-progress-container">
+                    <div class="hw-progress-bar-bg">
+                        <div id="hw-progress-bar" class="hw-progress-bar-fill"></div>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="hw-filters-row">
+                    <button class="hw-filter-btn active" data-filter="all">Все задачи</button>
+                    <button class="hw-filter-btn" data-filter="active">Нужно сделать</button>
+                    <button class="hw-filter-btn" data-filter="completed">Сделано</button>
+                </div>
+
+                <!-- Homework Cards List -->
+                <div id="homework-list" class="hw-list">
+                    <!-- Homework cards rendered dynamically by app.js -->
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="site-footer">
+            <p>🌮 CurieSchedule • Идеально для публикации на GitHub Pages • Работает офлайн без сервера</p>
+            <div class="footer-links">
+                <span>Подсказка: напечатайте <strong>taco</strong> или нажмите <strong>Ctrl+Shift+A</strong> для админки</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Add Homework Modal -->
+    <div id="hw-modal" class="modal-backdrop">
+        <div class="modal-window glass-panel">
+            <div class="modal-header">
+                <h3 style="font-weight: 800; font-size: 1.25rem;">📝 Добавить новое задание</h3>
+                <button class="modal-close-btn" id="close-hw-modal">&times;</button>
+            </div>
+            <form id="hw-form">
+                <div class="form-group">
+                    <label>Предмет:</label>
+                    <input type="text" id="hw-subject-input" class="form-input" placeholder="Например: Алгебра, Физика, Русский язык..." required>
+                </div>
+                <div class="form-group">
+                    <label>Что задали (задачи, параграфы, текст):</label>
+                    <textarea id="hw-text-input" class="form-textarea" rows="3" placeholder="Стр. 45 №12, выучить теорему..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Дедлайн (срок сдачи):</label>
+                    <input type="text" id="hw-deadline-input" class="form-input" placeholder="Завтра / Пятница / 15 октября...">
+                </div>
+                <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="hw-urgent-input" style="width: 18px; height: 18px; cursor: pointer;">
+                    <label for="hw-urgent-input" style="margin: 0; cursor: pointer; color: var(--accent-magenta); font-weight: 700;">🔥 Срочное задание (выделить красным)</label>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="cool-btn primary" style="width: 100%;">Сохранить задание</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Lesson Modal -->
+    <div id="lesson-modal" class="modal-backdrop">
+        <div class="modal-window glass-panel">
+            <div class="modal-header">
+                <h3 style="font-weight: 800; font-size: 1.25rem;">➕ Добавить урок (Только Админ)</h3>
+                <button class="modal-close-btn" id="close-lesson-modal">&times;</button>
+            </div>
+            <form id="lesson-form">
+                <div class="form-group">
+                    <label>День недели:</label>
+                    <select id="lesson-day-select" class="form-select">
+                        <option value="mon">Понедельник</option>
+                        <option value="tue">Вторник</option>
+                        <option value="wed">Среда</option>
+                        <option value="thu">Четверг</option>
+                        <option value="fri">Пятница</option>
+                        <option value="sat">Суббота</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Название предмета:</label>
+                    <input type="text" id="lesson-subject-input" class="form-input" placeholder="Например: Геометрия, Физика, Информатика..." required>
+                </div>
+                <div class="form-group">
+                    <label>Время урока:</label>
+                    <input type="text" id="lesson-time-input" class="form-input" placeholder="08:30 - 09:15" value="08:30 - 09:15">
+                </div>
+                <div class="form-group">
+                    <label>Кабинет:</label>
+                    <input type="text" id="lesson-room-input" class="form-input" placeholder="Например: 304 или Спортзал">
+                </div>
+                <div style="margin-top: 20px;">
+                    <button type="submit" class="cool-btn primary" style="width: 100%;">Сохранить урок</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Auth Modal (Firebase Login / Register) -->
+    <div id="auth-modal" class="modal-backdrop">
+        <div class="modal-window glass-panel" style="max-width: 440px;">
+            <div class="modal-header">
+                <h3 style="font-weight: 800; font-size: 1.25rem;">🔐 Вход в аккаунт</h3>
+                <button class="modal-close-btn" id="close-auth-modal">&times;</button>
+            </div>
+            
+            <div class="auth-tabs-row" style="display: flex; gap: 8px; margin-bottom: 20px;">
+                <button type="button" class="cool-btn active" id="tab-login-btn" style="flex: 1; justify-content: center;">Войти</button>
+                <button type="button" class="cool-btn" id="tab-register-btn" style="flex: 1; justify-content: center;">Регистрация</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="auth-login-form">
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="login-email" class="form-input" placeholder="student@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Пароль:</label>
+                    <input type="password" id="login-password" class="form-input" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="cool-btn primary" style="width: 100%; margin-top: 10px; justify-content: center;">Войти в аккаунт</button>
+            </form>
+
+            <!-- Register Form -->
+            <form id="auth-register-form" style="display: none;">
+                <div class="form-group">
+                    <label>Ваше Имя / Никнейм:</label>
+                    <input type="text" id="reg-name" class="form-input" placeholder="Иван Иванов" required>
+                </div>
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="reg-email" class="form-input" placeholder="student@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Пароль:</label>
+                    <input type="password" id="reg-password" class="form-input" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="cool-btn primary" style="width: 100%; margin-top: 10px; justify-content: center;">Зарегистрироваться</button>
+            </form>
+
+            <div style="margin: 20px 0; display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 0.8rem;">
+                <div style="flex: 1; height: 1px; background: var(--border-color);"></div>
+                <span>ИЛИ</span>
+                <div style="flex: 1; height: 1px; background: var(--border-color);"></div>
+            </div>
+
+            <button type="button" id="google-login-btn" class="cool-btn" style="width: 100%; justify-content: center; gap: 10px;">
+                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.27 21.43 7.35 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.27 2.57 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/></svg>
+                Войти через Google
+            </button>
+        </div>
+    </div>
+
+    <!-- Answer / Solution Upload Modal (DeepSeek, Алиса, ГДЗ) -->
+    <div id="answer-modal" class="modal-backdrop">
+        <div class="modal-window glass-panel" style="max-width: 580px;">
+            <div class="modal-header">
+                <h3 id="answer-modal-title" style="font-weight: 800; font-size: 1.25rem; color: var(--accent-cyan);">💡 Загрузить ответ / решение</h3>
+                <button class="modal-close-btn" id="close-answer-modal">&times;</button>
+            </div>
+            
+            <!-- Quick prompt launchers for DeepSeek & Alice -->
+            <div style="background: rgba(0, 240, 255, 0.06); border: 1px solid rgba(0, 240, 255, 0.2); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 4px;">Задание:</p>
+                <p id="answer-task-preview" style="font-size: 0.95rem; font-weight: 600; margin-bottom: 10px;"></p>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <a href="https://chat.deepseek.com" target="_blank" rel="noopener" class="mini-tool-btn" style="color: #00f0ff;">
+                        🧠 Открыть DeepSeek
+                    </a>
+                    <a href="https://a.ya.ru" target="_blank" rel="noopener" class="mini-tool-btn" style="color: #a855f7;">
+                        🟣 Открыть Алису
+                    </a>
+                    <a href="https://gdz.ru" target="_blank" rel="noopener" class="mini-tool-btn" style="color: #00ff88;">
+                        📚 Открыть ГДЗ.ру
+                    </a>
+                </div>
+            </div>
+
+            <form id="answer-form">
+                <input type="hidden" id="answer-hw-id">
+                <div class="form-group">
+                    <label>Источник решения:</label>
+                    <select id="answer-source-select" class="form-select">
+                        <option value="DeepSeek AI">🧠 DeepSeek AI</option>
+                        <option value="Яндекс Алиса">🟣 Яндекс Алиса AI</option>
+                        <option value="ГДЗ">📚 ГДЗ (Решебник)</option>
+                        <option value="Админ">✍️ Личное решение / Админ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Текст решения / ответа:</label>
+                    <textarea id="answer-text-input" class="form-textarea" rows="6" placeholder="Вставьте сюда скопированный ответ от DeepSeek, Алисы или текст решения..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Ссылка на источник (страница в ГДЗ или чат, необязательно):</label>
+                    <input type="url" id="answer-link-input" class="form-input" placeholder="https://gdz.ru/... или https://chat.deepseek.com/...">
+                </div>
+                <button type="submit" class="cool-btn primary" style="width: 100%; justify-content: center;">💾 Опубликовать решение для всех</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Abuse Modal -->
+    <div id="admin-modal" class="modal-backdrop">
+        <div class="modal-window admin-window">
+            <div class="modal-header">
+                <h3 style="font-weight: 900; font-size: 1.35rem; color: var(--accent-magenta); display: flex; align-items: center; gap: 10px;">
+                    <span>⚡</span> ПАНЕЛЬ ADMIN ABUSE 🌮
+                </h3>
+                <button class="modal-close-btn" id="close-admin-modal">&times;</button>
+            </div>
+
+            <!-- PIN Login State -->
+            <div id="admin-login-section">
+                <p style="color: var(--text-muted); margin-bottom: 16px;">
+                    Введите секретный PIN админа для доступа к сверхсиле:
+                </p>
+                <form id="admin-login-form">
+                    <div class="form-group">
+                        <input type="password" id="admin-pin-input" class="form-input" placeholder="PIN (по умолчанию 1337, admin или taco)" autofocus>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="submit" class="cool-btn admin-glow" style="flex: 1;">Разблокировать</button>
+                        <button type="button" id="admin-bypass-btn" class="cool-btn" style="color: var(--accent-yellow);">Я Взломщик 🔓</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Admin Controls (shown after unlock) -->
+            <div id="admin-panel-section" style="display: none;">
+                <!-- 1. Admin Schedule Control (Только Админ управляет уроками) -->
+                <div class="admin-card-section" style="border: 1px solid rgba(0, 240, 255, 0.4);">
+                    <h4 class="admin-section-subtitle" style="color: var(--accent-cyan);">📋 Управление Расписанием (Только Админ)</h4>
+                    <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px;">
+                        Обычные посетители видят сайт в режиме «Только чтение». Только вы можете добавлять и менять уроки!
+                    </p>
+                    <div class="presets-grid">
+                        <button class="cool-btn primary" id="admin-add-lesson-btn" style="width: 100%;">➕ Добавить новый урок</button>
+                        <button class="cool-btn" id="admin-clear-day-btn" style="color: var(--accent-yellow);">🗑️ Очистить текущий день</button>
+                        <button class="cool-btn" id="admin-reset-schedule-btn" style="color: var(--danger);">🔄 Очистить всё расписание</button>
+                    </div>
+                </div>
+
+                <!-- 2. Chaos Toggles (Светяшки, Диско, Тако, Live Edit) -->
+                <div class="admin-card-section">
+                    <h4 class="admin-section-subtitle">✨ Визуальные Эффекты & Светяшки</h4>
+                    <div class="toggles-grid">
+                        <div class="toggle-item">
+                            <span>✏️ Свободное редактирование</span>
+                            <label class="switch">
+                                <input type="checkbox" id="toggle-live-edit">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-item">
+                            <span>🌈 RGB Геймер (Светяшки)</span>
+                            <label class="switch">
+                                <input type="checkbox" id="toggle-rgb-glow">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-item">
+                            <span>🪩 Дискотека / Rave Party</span>
+                            <label class="switch">
+                                <input type="checkbox" id="toggle-disco-party">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-item">
+                            <span>🌮 Дождь из Тако</span>
+                            <label class="switch">
+                                <input type="checkbox" id="toggle-taco-rain">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Troll Presets (Смена расписания как захочу) -->
+                <div class="admin-card-section">
+                    <h4 class="admin-section-subtitle">🎭 Смена расписания как захочу (Тролль-пресеты)</h4>
+                    <div class="presets-grid">
+                        <button class="preset-btn" id="preset-lunch-btn">🍕 Всё на ОБЕД</button>
+                        <button class="preset-btn" id="preset-vacation-btn">🏖️ Каникулы!</button>
+                        <button class="preset-btn" id="preset-gym-btn">🏃 7 Физкультур</button>
+                        <button class="preset-btn" id="preset-cybersport-btn">🎮 Киберспорт</button>
+                        <button class="preset-btn" id="preset-secret-rooms-btn">🏰 Секретные кабинеты</button>
+                        <button class="preset-btn" id="hack-grades-btn" style="background: rgba(0,255,136,0.15); border-color: var(--accent-green);">⭐ Оценка 5+ Всем</button>
+                    </div>
+                </div>
+
+                <!-- 3. Announcement Banner Broadcast -->
+                <div class="admin-card-section">
+                    <h4 class="admin-section-subtitle">📢 Срочное Объявление (Бегущая строка)</h4>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="admin-banner-input" class="form-input" placeholder="Текст объявления (например: Завтра уроков нет!)">
+                        <button class="cool-btn admin-glow" id="set-banner-btn" style="white-space: nowrap;">Запустить</button>
+                        <button class="cool-btn" id="clear-banner-btn" style="white-space: nowrap;">Убрать</button>
+                    </div>
+                </div>
+
+                <!-- 4. Music Player -->
+                <div class="admin-card-section">
+                    <h4 class="admin-section-subtitle">🎵 Музыкальные Треки (Web Audio Synth)</h4>
+                    <div class="presets-grid">
+                        <button class="music-btn preset-btn" data-track="taco">🌮 Тако Фиеста</button>
+                        <button class="music-btn preset-btn" data-track="phonk">⚡ Drift Phonk</button>
+                        <button class="music-btn preset-btn" data-track="lofi">🎧 8-bit Lo-Fi</button>
+                        <button class="music-btn preset-btn" data-track="stop" style="color: var(--danger);">⏹️ Стоп Музыка</button>
+                    </div>
+                </div>
+
+                <!-- 5. Meme Soundboard -->
+                <div class="admin-card-section">
+                    <h4 class="admin-section-subtitle">💥 Мемный Саундборд</h4>
+                    <div class="soundboard-grid">
+                        <button class="soundboard-btn" data-sound="tacobell">🔔 Taco Bell</button>
+                        <button class="soundboard-btn" data-sound="vineboom">💥 Vine Boom</button>
+                        <button class="soundboard-btn" data-sound="airhorn">🎺 Air Horn MLG</button>
+                        <button class="soundboard-btn" data-sound="munch">🥑 Хрум Тако</button>
+                        <button class="soundboard-btn" data-sound="laser">⚡ Лазер Zap</button>
+                        <button class="soundboard-btn" data-sound="success">🏆 Победа / Win</button>
+                    </div>
+                </div>
+
+                <!-- 6. Excuse Generator -->
+                <div class="admin-card-section">
+                    <h4 class="admin-section-subtitle">🛡️ Генератор гениальных отмазок для учителя</h4>
+                    <button class="cool-btn" id="generate-excuse-btn" style="width: 100%; margin-bottom: 8px;">🎲 Сгенерировать и скопировать отмазку</button>
+                    <p id="excuse-output" style="font-style: italic; color: var(--accent-cyan); font-size: 0.9rem; text-align: center; min-height: 24px;"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+
+    <!-- Scripts -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/effects.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/auth.js"></script>
+</body>
+</html>

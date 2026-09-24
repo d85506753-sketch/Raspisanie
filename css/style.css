@@ -1,0 +1,1420 @@
+/* ==========================================================================
+   CurieSchedule - Cyberpunk Glassmorphism & Admin Abuse Theme
+   ========================================================================== */
+
+:root {
+    --bg-dark: #0d1117;
+    --bg-card: rgba(22, 27, 34, 0.75);
+    --bg-card-hover: rgba(33, 38, 45, 0.85);
+    --border-color: rgba(255, 255, 255, 0.12);
+    --text-main: #f0f6fc;
+    --text-muted: #8b949e;
+    --accent-cyan: #00f0ff;
+    --accent-magenta: #ff007f;
+    --accent-yellow: #ffe600;
+    --accent-green: #00ff88;
+    --accent-purple: #a855f7;
+    --accent-orange: #ff7b00;
+    --danger: #ff4d4d;
+    --glow-cyan: 0 0 15px rgba(0, 240, 255, 0.45);
+    --glow-pink: 0 0 15px rgba(255, 0, 127, 0.45);
+    --glass-blur: blur(12px);
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    background: radial-gradient(circle at top right, #1f1b3c, #0c0e14 60%), #0c0e14;
+    color: var(--text-main);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+    line-height: 1.5;
+}
+
+/* Background animated subtle grid */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ==========================================================================
+   ADMIN ABUSE & SPECIAL VISUAL MODES (Светяшки, Диско, Тряска)
+   ========================================================================== */
+
+/* 1. RGB Gamer Mode (Светяшки) */
+body.rgb-gamer-mode {
+    animation: rgb-bg 8s infinite alternate ease-in-out;
+}
+
+body.rgb-gamer-mode .glass-panel,
+body.rgb-gamer-mode .header-card,
+body.rgb-gamer-mode .dock-item {
+    border-color: transparent !important;
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.3), 0 0 40px rgba(255, 0, 127, 0.2) !important;
+    animation: rgb-border 3s linear infinite;
+}
+
+body.rgb-gamer-mode .brand-title {
+    background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #00ffff, #0000ff, #8b00ff, #ff0000);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: rainbow-text 3s linear infinite;
+}
+
+@keyframes rgb-border {
+    0% { border: 2px solid #ff0055; box-shadow: 0 0 15px #ff0055; }
+    25% { border: 2px solid #00f0ff; box-shadow: 0 0 15px #00f0ff; }
+    50% { border: 2px solid #00ff66; box-shadow: 0 0 15px #00ff66; }
+    75% { border: 2px solid #ffe600; box-shadow: 0 0 15px #ffe600; }
+    100% { border: 2px solid #ff0055; box-shadow: 0 0 15px #ff0055; }
+}
+
+@keyframes rainbow-text {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}
+
+@keyframes rgb-bg {
+    0% { background-color: #120924; }
+    50% { background-color: #051a24; }
+    100% { background-color: #240a14; }
+}
+
+/* 2. Disco Party Mode (Дискотека) */
+body.disco-party-mode {
+    animation: disco-strobe 0.7s infinite alternate;
+}
+
+@keyframes disco-strobe {
+    0% { filter: hue-rotate(0deg) contrast(1.1); }
+    50% { filter: hue-rotate(180deg) contrast(1.3) brightness(1.2); }
+    100% { filter: hue-rotate(360deg) contrast(1.1); }
+}
+
+/* 3. Screen Shake */
+.screen-shake-anim {
+    animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+    10%, 90% { transform: translate3d(-3px, 0, 0) rotate(-0.5deg); }
+    20%, 80% { transform: translate3d(5px, 0, 0) rotate(1deg); }
+    30%, 50%, 70% { transform: translate3d(-6px, 0, 0) rotate(-1deg); }
+    40%, 60% { transform: translate3d(6px, 0, 0) rotate(1deg); }
+}
+
+/* ==========================================================================
+   Layout & Glassmorphic Components
+   ========================================================================== */
+
+.app-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 16px 20px 80px 20px;
+    position: relative;
+    z-index: 1;
+}
+
+.glass-panel {
+    background: var(--bg-card);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    transition: var(--transition);
+}
+
+.glass-panel:hover {
+    border-color: rgba(255, 255, 255, 0.22);
+}
+
+/* ==========================================================================
+   Announcement Bar (Бегущая строка админа)
+   ========================================================================== */
+
+.announcement-bar {
+    display: none;
+    background: linear-gradient(90deg, #ff007f, #7928ca, #00f0ff);
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 16px;
+    align-items: center;
+    box-shadow: 0 4px 20px rgba(255, 0, 127, 0.4);
+    font-weight: 600;
+    overflow: hidden;
+    position: relative;
+}
+
+.announcement-marquee {
+    white-space: nowrap;
+    display: inline-block;
+    animation: marquee 16s linear infinite;
+    font-size: 1.05rem;
+    letter-spacing: 0.5px;
+}
+
+@keyframes marquee {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+}
+
+/* ==========================================================================
+   Header
+   ========================================================================== */
+
+.site-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    margin-bottom: 20px;
+    border-radius: var(--radius-lg);
+    background: rgba(18, 22, 32, 0.85);
+    border: 1px solid rgba(0, 240, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.logo-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.logo-icon {
+    font-size: 2.2rem;
+    filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.7));
+    transition: transform 0.3s ease;
+}
+
+.logo-wrapper:hover .logo-icon {
+    transform: rotate(20deg) scale(1.15);
+}
+
+.brand-title {
+    font-size: 1.7rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #00f0ff 0%, #ff007f 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+}
+
+.brand-subtitle {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Action & Tool Buttons */
+.cool-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.cool-btn:hover {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.cool-btn.primary {
+    background: linear-gradient(135deg, #00f0ff, #0070f3);
+    color: #000;
+    font-weight: 700;
+    border: none;
+    box-shadow: var(--glow-cyan);
+}
+
+.cool-btn.primary:hover {
+    box-shadow: 0 0 25px rgba(0, 240, 255, 0.7);
+}
+
+.cool-btn.admin-glow {
+    background: linear-gradient(135deg, #ff007f, #a855f7);
+    color: #fff;
+    border: none;
+    box-shadow: var(--glow-pink);
+    position: relative;
+    overflow: hidden;
+}
+
+.cool-btn.admin-glow:hover {
+    box-shadow: 0 0 25px rgba(255, 0, 127, 0.8);
+}
+
+/* ==========================================================================
+   AI & GDZ Launch Dock (DeepSeek, Алиса ИИ, ГДЗ)
+   ========================================================================== */
+
+.dock-section {
+    margin-bottom: 24px;
+}
+
+.dock-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 0 4px;
+}
+
+.dock-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dock-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+}
+
+.dock-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    text-decoration: none;
+    color: var(--text-main);
+    border-radius: var(--radius-md);
+    background: rgba(22, 27, 34, 0.8);
+    border: 1px solid var(--border-color);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.dock-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--accent-cyan);
+    opacity: 0;
+    transition: var(--transition);
+}
+
+.dock-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(33, 38, 45, 0.95);
+}
+
+.dock-card:hover::before {
+    opacity: 1;
+}
+
+.dock-card.deepseek:hover {
+    box-shadow: 0 6px 20px rgba(0, 112, 243, 0.35);
+}
+.dock-card.deepseek::before {
+    background: #0070f3;
+}
+
+.dock-card.alice:hover {
+    box-shadow: 0 6px 20px rgba(168, 85, 247, 0.35);
+}
+.dock-card.alice::before {
+    background: #a855f7;
+}
+
+.dock-card.gdz:hover {
+    box-shadow: 0 6px 20px rgba(0, 255, 136, 0.35);
+}
+.dock-card.gdz::before {
+    background: #00ff88;
+}
+
+.dock-card.resheba:hover {
+    box-shadow: 0 6px 20px rgba(255, 230, 0, 0.35);
+}
+.dock-card.resheba::before {
+    background: #ffe600;
+}
+
+.dock-icon {
+    font-size: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dock-info h4 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+
+.dock-info p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.dock-arrow {
+    margin-left: auto;
+    font-size: 1.2rem;
+    opacity: 0.6;
+    transition: transform 0.2s ease;
+}
+
+.dock-card:hover .dock-arrow {
+    transform: translateX(4px);
+    opacity: 1;
+}
+
+/* ==========================================================================
+   Days of the Week Selector
+   ========================================================================== */
+
+.days-nav-wrapper {
+    margin-bottom: 24px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+
+.days-nav {
+    display: flex;
+    gap: 10px;
+    min-width: max-content;
+}
+
+.day-btn {
+    padding: 10px 22px;
+    background: rgba(22, 27, 34, 0.7);
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: var(--transition);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.day-btn .day-short {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+.day-btn .day-full {
+    font-size: 0.75rem;
+    opacity: 0.7;
+}
+
+.day-btn:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+    color: var(--text-main);
+    transform: translateY(-2px);
+}
+
+.day-btn.active {
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(0, 112, 243, 0.2));
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.35);
+    color: var(--accent-cyan);
+}
+
+.day-btn.active .day-short {
+    color: var(--accent-cyan);
+}
+
+/* ==========================================================================
+   Main App Grid (Schedule + Homework)
+   ========================================================================== */
+
+.main-grid {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+@media (max-width: 960px) {
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.section-card {
+    padding: 24px;
+    border-radius: var(--radius-lg);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.section-title {
+    font-size: 1.35rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ==========================================================================
+   Schedule Lessons List
+   ========================================================================== */
+
+.lessons-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.lesson-card {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    border-radius: var(--radius-md);
+    position: relative;
+    border: 1px solid var(--border-color);
+    background: rgba(22, 27, 34, 0.65);
+    gap: 16px;
+    transition: var(--transition);
+}
+
+.lesson-card:hover {
+    transform: translateX(4px);
+    border-color: rgba(0, 240, 255, 0.4);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.lesson-card.current-active-lesson {
+    border-color: var(--accent-green);
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.35);
+    background: rgba(0, 255, 136, 0.08);
+}
+
+.lesson-card.current-active-lesson::before {
+    content: 'ИДЁТ СЕЙЧАС';
+    position: absolute;
+    top: -10px;
+    right: 20px;
+    background: var(--accent-green);
+    color: #000;
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.lesson-number-badge {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--accent-cyan);
+    min-width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(0, 240, 255, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(0, 240, 255, 0.3);
+}
+
+.lesson-content {
+    flex: 1;
+}
+
+.lesson-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.lesson-subject {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-main);
+    transition: color 0.2s;
+}
+
+.lesson-subject.live-editable-active:hover {
+    color: var(--accent-yellow);
+    text-decoration: underline dashed;
+}
+
+.lesson-time {
+    font-size: 0.85rem;
+    color: var(--accent-cyan);
+    font-weight: 600;
+    background: rgba(0, 240, 255, 0.08);
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+
+.lesson-details {
+    display: flex;
+    gap: 16px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.lesson-details span strong {
+    color: #c9d1d9;
+}
+
+.lesson-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.icon-btn {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+    font-weight: 600;
+}
+
+.icon-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+}
+
+/* ==========================================================================
+   Homework Section
+   ========================================================================== */
+
+.hw-progress-container {
+    margin-bottom: 18px;
+}
+
+.hw-progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.hw-progress-bar-bg {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.hw-progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00f0ff, #00ff88);
+    border-radius: 4px;
+    width: 0%;
+    transition: width 0.4s ease;
+}
+
+.hw-filters-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.hw-filter-btn {
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.hw-filter-btn.active {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--text-main);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.hw-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.hw-card {
+    display: flex;
+    gap: 14px;
+    padding: 16px;
+    border-radius: var(--radius-md);
+    background: rgba(22, 27, 34, 0.65);
+    border: 1px solid var(--border-color);
+    transition: var(--transition);
+}
+
+.hw-card:hover {
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.hw-card.completed {
+    opacity: 0.55;
+    background: rgba(13, 17, 23, 0.4);
+}
+
+.hw-card.completed .hw-task-text {
+    text-decoration: line-through;
+    color: var(--text-muted);
+}
+
+.hw-card.urgent-border {
+    border-left: 4px solid var(--accent-magenta);
+}
+
+/* Custom Checkbox */
+.hw-checkbox-wrapper {
+    display: flex;
+    align-items: flex-start;
+    padding-top: 2px;
+}
+
+.hw-checkbox-wrapper input[type="checkbox"] {
+    display: none;
+}
+
+.hw-checkbox-wrapper label {
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--accent-cyan);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.hw-checkbox-wrapper input[type="checkbox"]:checked + label {
+    background: var(--accent-green);
+    border-color: var(--accent-green);
+}
+
+.hw-checkbox-wrapper input[type="checkbox"]:checked + label::after {
+    content: '✓';
+    color: #000;
+    font-weight: 900;
+    font-size: 0.95rem;
+}
+
+.hw-content {
+    flex: 1;
+}
+
+.hw-top-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.hw-subject-badge {
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    background: rgba(0, 240, 255, 0.12);
+    color: var(--accent-cyan);
+    border-radius: 6px;
+}
+
+.hw-deadline-badge {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.hw-deadline-badge.urgent-badge {
+    color: var(--accent-magenta);
+    font-weight: 700;
+}
+
+.hw-task-text {
+    font-size: 0.95rem;
+    margin-bottom: 12px;
+    line-height: 1.45;
+}
+
+.hw-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.hw-ai-helpers {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.mini-tool-btn {
+    padding: 4px 9px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-main);
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.mini-tool-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.delete-hw-btn {
+    background: none;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+}
+
+.delete-hw-btn:hover {
+    opacity: 1;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+}
+
+.empty-icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 10px;
+}
+
+/* ==========================================================================
+   Modals (Admin Abuse & Add Homework)
+   ========================================================================== */
+
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 16px;
+}
+
+.modal-backdrop.active {
+    display: flex;
+}
+
+.modal-window {
+    background: #131722;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 620px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 28px;
+    position: relative;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+}
+
+.admin-window {
+    border: 2px solid var(--accent-magenta);
+    box-shadow: 0 0 30px rgba(255, 0, 127, 0.4);
+    max-width: 680px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-close-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.6rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.modal-close-btn:hover {
+    color: #fff;
+}
+
+/* Form inputs */
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.form-input, .form-textarea, .form-select {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-main);
+    font-size: 0.95rem;
+    outline: none;
+    transition: var(--transition);
+}
+
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* Admin abuse switch items */
+.admin-card-section {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-md);
+    padding: 18px;
+    margin-bottom: 18px;
+}
+
+.admin-section-subtitle {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--accent-yellow);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.toggles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+
+.toggle-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+}
+
+.toggle-item span {
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+/* Switch toggle slider */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(255, 255, 255, 0.2);
+    transition: .3s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: var(--accent-magenta);
+}
+
+input:checked + .slider:before {
+    transform: translateX(20px);
+}
+
+/* Soundboard & Preset Buttons */
+.soundboard-grid, .presets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+}
+
+.soundboard-btn, .preset-btn {
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-main);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: center;
+}
+
+.soundboard-btn:hover, .preset-btn:hover {
+    background: var(--accent-magenta);
+    color: #fff;
+    border-color: transparent;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 0, 127, 0.4);
+}
+
+/* ==========================================================================
+   Floating Taco Mascot
+   ========================================================================== */
+
+.floating-taco-mascot {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 999;
+    cursor: pointer;
+    user-select: none;
+}
+
+.taco-emoji {
+    font-size: 3.2rem;
+    animation: taco-bounce 2s infinite ease-in-out;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
+    transition: transform 0.2s;
+}
+
+.floating-taco-mascot:hover .taco-emoji {
+    transform: scale(1.25) rotate(15deg);
+}
+
+@keyframes taco-bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+}
+
+.taco-speech-bubble {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    margin-bottom: 8px;
+    background: #fff;
+    color: #111;
+    padding: 8px 14px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s, transform 0.3s;
+    transform: translateY(10px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+
+.taco-speech-bubble.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ==========================================================================
+   Matrix Hacked Overlay
+   ========================================================================== */
+
+.matrix-hacked-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0, 20, 0, 0.92);
+    z-index: 20000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+}
+
+.hacked-box {
+    text-align: center;
+    background: #001100;
+    border: 3px solid #00ff66;
+    box-shadow: 0 0 40px #00ff66;
+    padding: 40px;
+    border-radius: 20px;
+    color: #00ff66;
+    max-width: 500px;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.big-grade {
+    font-size: 2.2rem;
+    font-weight: 900;
+    margin: 20px 0;
+    color: #ffe600;
+    text-shadow: 0 0 20px #ffe600;
+}
+
+/* ==========================================================================
+   Footer & Responsive Tweaks
+   ========================================================================== */
+
+.site-footer {
+    margin-top: 40px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.footer-links {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.footer-links a {
+    color: var(--accent-cyan);
+    text-decoration: none;
+}
+
+.footer-links a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .site-header {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+    }
+    .header-controls {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+    .lesson-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .lesson-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
+/* ==========================================================================
+   Toast Notifications
+   ========================================================================== */
+
+.toast-container {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    z-index: 10001;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.cool-toast {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    background: rgba(18, 22, 32, 0.95);
+    border: 1px solid var(--accent-cyan);
+    box-shadow: 0 4px 20px rgba(0, 240, 255, 0.4);
+    border-radius: var(--radius-sm);
+    color: var(--text-main);
+    font-size: 0.92rem;
+    font-weight: 600;
+    transform: translateY(20px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: auto;
+}
+
+.cool-toast.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.toast-icon {
+    font-size: 1.25rem;
+}
+
+/* ==========================================================================
+   User Account & Auth Header Badge
+   ========================================================================== */
+
+.header-user-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 14px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+}
+
+.user-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.9rem;
+}
+
+.user-meta {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-name {
+    font-size: 0.88rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.role-badge {
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+
+.role-badge.admin-role {
+    color: var(--accent-magenta);
+}
+
+.role-badge.student-role {
+    color: var(--accent-cyan);
+}
+
+.logout-icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 2px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.logout-icon-btn:hover {
+    opacity: 1;
+}
+
+/* ==========================================================================
+   Homework Solutions & Answers (DeepSeek, Алиса, ГДЗ)
+   ========================================================================== */
+
+.hw-solution-container {
+    margin: 10px 0 14px 0;
+}
+
+.solution-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(0, 240, 255, 0.1);
+    border: 1px solid rgba(0, 240, 255, 0.35);
+    border-radius: 8px;
+    color: var(--accent-cyan);
+    font-size: 0.84rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.solution-toggle-btn:hover {
+    background: rgba(0, 240, 255, 0.2);
+    box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
+    transform: translateY(-1px);
+}
+
+.solution-content-box {
+    margin-top: 10px;
+    padding: 14px 16px;
+    background: rgba(10, 14, 22, 0.95);
+    border: 1px solid rgba(0, 240, 255, 0.25);
+    border-radius: 10px;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
+    animation: fadeIn 0.25s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.solution-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.solution-source-badge {
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.76rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.solution-source-badge.source-deepseek,
+.solution-source-badge[class*="deepseek"] {
+    background: rgba(0, 112, 243, 0.2);
+    color: #00f0ff;
+    border: 1px solid rgba(0, 112, 243, 0.4);
+}
+
+.solution-source-badge.source-алиса,
+.solution-source-badge[class*="алиса"] {
+    background: rgba(168, 85, 247, 0.2);
+    color: #a855f7;
+    border: 1px solid rgba(168, 85, 247, 0.4);
+}
+
+.solution-source-badge.source-гдз,
+.solution-source-badge[class*="гдз"] {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+    border: 1px solid rgba(0, 255, 136, 0.4);
+}
+
+.solution-source-link {
+    font-size: 0.78rem;
+    color: var(--accent-cyan);
+    text-decoration: none;
+}
+
+.solution-source-link:hover {
+    text-decoration: underline;
+}
+
+.solution-text {
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: #e6edf3;
+    font-family: 'Consolas', 'Courier New', monospace;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.admin-upload-btn {
+    border-color: rgba(0, 240, 255, 0.4) !important;
+    color: var(--accent-cyan) !important;
+}
