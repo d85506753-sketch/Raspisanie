@@ -1,16 +1,79 @@
 /**
- * Main Application Logic
- * Schedule & Homework Manager + LocalStorage Sync + Shareable Hash URL
+ * Official School Bell Schedule Presets
+ * Regular days: 40 min lessons
+ * Wednesday: Lesson 1 is strictly 20 minutes (08:00 - 08:20)
  */
+const BELL_TIMES = {
+    regular: {
+        1: '08:00 - 08:40',
+        2: '08:55 - 09:35',
+        3: '09:55 - 10:35',
+        4: '10:55 - 11:35',
+        5: '11:55 - 12:35',
+        6: '12:50 - 13:30',
+        7: '13:40 - 14:20',
+        8: '14:30 - 15:10'
+    },
+    wednesday: {
+        1: '08:00 - 08:20', // В среду всегда 1 урок 20 минут!
+        2: '08:55 - 09:35',
+        3: '09:55 - 10:35',
+        4: '10:55 - 11:35',
+        5: '11:55 - 12:35',
+        6: '12:50 - 13:30',
+        7: '13:40 - 14:20',
+        8: '14:30 - 15:10'
+    }
+};
+window.BELL_TIMES = BELL_TIMES;
 
-const DEFAULT_SCHEDULE = {
-    mon: [],
-    tue: [],
-    wed: [],
-    thu: [],
-    fri: [],
+const OFFICIAL_SCHOOL_SCHEDULE = {
+    mon: [
+        { id: 'mon_1', num: 1, time: '08:00 - 08:40', subject: 'Разговоры о важном (РоВ)', room: '34' },
+        { id: 'mon_2', num: 2, time: '08:55 - 09:35', subject: 'История', room: '23' },
+        { id: 'mon_3', num: 3, time: '09:55 - 10:35', subject: 'Русский язык', room: '36' },
+        { id: 'mon_4', num: 4, time: '10:55 - 11:35', subject: 'Вероятность и статистика', room: '16' },
+        { id: 'mon_5', num: 5, time: '11:55 - 12:35', subject: 'Алгебра', room: '16' },
+        { id: 'mon_6', num: 6, time: '12:50 - 13:30', subject: 'Английский язык', room: '33, 39' },
+        { id: 'mon_7', num: 7, time: '13:40 - 14:20', subject: 'Практикум по русскому языку', room: '36' }
+    ],
+    tue: [
+        { id: 'tue_1', num: 1, time: '08:00 - 08:40', subject: 'Биология', room: '21' },
+        { id: 'tue_2', num: 2, time: '08:55 - 09:35', subject: 'Русский язык', room: '36' },
+        { id: 'tue_3', num: 3, time: '09:55 - 10:35', subject: 'Геометрия', room: '16' },
+        { id: 'tue_4', num: 4, time: '10:55 - 11:35', subject: 'Физика', room: '32' },
+        { id: 'tue_5', num: 5, time: '11:55 - 12:35', subject: 'Математический практикум', room: '16' },
+        { id: 'tue_6', num: 6, time: '12:50 - 13:30', subject: 'Информатика / Английский', room: '34, 39' }
+    ],
+    wed: [
+        { id: 'wed_1', num: 1, time: '08:00 - 08:20', subject: 'Классный час (20 мин)', room: '34' }, // Wednesday 1st lesson: strictly 20 min!
+        { id: 'wed_2', num: 2, time: '08:55 - 09:35', subject: 'География', room: '25' },
+        { id: 'wed_3', num: 3, time: '09:55 - 10:35', subject: 'Алгебра', room: '16' },
+        { id: 'wed_4', num: 4, time: '10:55 - 11:35', subject: 'Биология', room: '21' },
+        { id: 'wed_5', num: 5, time: '11:55 - 12:35', subject: 'Английский / Информатика', room: '33, 34' },
+        { id: 'wed_6', num: 6, time: '12:50 - 13:30', subject: 'Химия', room: '21' },
+        { id: 'wed_7', num: 7, time: '13:40 - 14:20', subject: 'Физкультура', room: 'Спортзал (Е)' },
+        { id: 'wed_8', num: 8, time: '14:30 - 15:10', subject: 'История', room: '23' }
+    ],
+    thu: [
+        { id: 'thu_1', num: 1, time: '08:00 - 08:40', subject: 'Физика', room: '32' },
+        { id: 'thu_2', num: 2, time: '08:55 - 09:35', subject: 'География', room: '25' },
+        { id: 'thu_3', num: 3, time: '09:55 - 10:35', subject: 'РМГ', room: '34' },
+        { id: 'thu_4', num: 4, time: '10:55 - 11:35', subject: 'Геометрия', room: '16' },
+        { id: 'thu_5', num: 5, time: '11:55 - 12:35', subject: 'Английский язык', room: '33, 39' },
+        { id: 'thu_6', num: 6, time: '12:50 - 13:30', subject: 'Литература', room: '36' }
+    ],
+    fri: [
+        { id: 'fri_3', num: 3, time: '09:55 - 10:35', subject: 'Алгебра', room: '16' },
+        { id: 'fri_4', num: 4, time: '10:55 - 11:35', subject: 'Физкультура', room: 'Спортзал (Е)' },
+        { id: 'fri_5', num: 5, time: '11:55 - 12:35', subject: 'Химия', room: '21' },
+        { id: 'fri_6', num: 6, time: '12:50 - 13:30', subject: 'Труд (тех., маст.)', room: 'Мастерские' },
+        { id: 'fri_7', num: 7, time: '13:40 - 14:20', subject: 'Русский язык', room: '36' }
+    ],
     sat: []
 };
+window.OFFICIAL_SCHOOL_SCHEDULE = OFFICIAL_SCHOOL_SCHEDULE;
+const DEFAULT_SCHEDULE = OFFICIAL_SCHOOL_SCHEDULE;
 
 const DEFAULT_HOMEWORK = [
     {
@@ -88,6 +151,13 @@ class AppManager {
         this.bannerAnnouncement = '';
         this.chatTimer = null;
 
+        // Cloud Firestore Synchronization
+        this.db = null;
+        this.cloudStatus = 'connecting';
+        this.lastChatTimestamp = 0;
+        this.cloudSyncDebounceTimer = null;
+        this.hasLoadedCloudOnce = false;
+
         this.dayNames = {
             mon: 'Понедельник',
             tue: 'Вторник',
@@ -115,12 +185,337 @@ class AppManager {
         this.checkUrlImport();
         this.checkActiveAdminChat();
         this.setupCrossTabChatSync();
+        this.initFirestore();
+    }
+
+    // --- CLOUD FIRESTORE REAL-TIME SYNCHRONIZATION ---
+    initFirestore() {
+        if (!window.firebase || !window.firebase.firestore || !window.isFirebaseConfigured || !window.isFirebaseConfigured()) {
+            this.updateCloudStatus('offline', 'Облако: Не настроено');
+            return;
+        }
+
+        try {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(window.FIREBASE_CONFIG);
+            }
+            this.db = firebase.firestore();
+
+            // Enable multi-tab persistence if supported
+            try {
+                this.db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+            } catch (e) {}
+
+            this.updateCloudStatus('syncing', 'Облако: Подключение...');
+            this.setupFirestoreListeners();
+        } catch (err) {
+            console.error('Firestore init error:', err);
+            this.handleFirestoreError(err);
+        }
+    }
+
+    setupFirestoreListeners() {
+        if (!this.db) return;
+
+        // 1. Real-time Schedule Snapshot
+        this.db.collection('curie_data').doc('schedule').onSnapshot((doc) => {
+            if (doc.exists) {
+                const data = doc.data();
+                if (data && data.schedule && typeof data.schedule === 'object') {
+                    this.schedule = data.schedule;
+                    try {
+                        localStorage.setItem('curie_schedule', JSON.stringify(this.schedule));
+                    } catch (e) {}
+                    this.renderSchedule();
+                    this.updateCloudStatus('online', '🟢 Облако: Синхронизировано');
+                    this.hasLoadedCloudOnce = true;
+                }
+            } else {
+                // If doc doesn't exist yet and user is admin, seed current schedule
+                if (this.isUserAdmin()) {
+                    this.syncScheduleToFirestore(false);
+                }
+                this.updateCloudStatus('online', '🟢 Облако: Подключено');
+            }
+        }, (err) => {
+            this.handleFirestoreError(err);
+        });
+
+        // 2. Real-time Homework Snapshot
+        this.db.collection('curie_data').doc('homework').onSnapshot((doc) => {
+            if (doc.exists) {
+                const data = doc.data();
+                if (data && Array.isArray(data.homework)) {
+                    this.homework = data.homework;
+                    try {
+                        localStorage.setItem('curie_homework', JSON.stringify(this.homework));
+                    } catch (e) {}
+                    this.renderHomework();
+                    this.updateStats();
+                    this.updateCloudStatus('online', '🟢 Облако: Синхронизировано');
+                }
+            } else {
+                if (this.isUserAdmin()) {
+                    this.syncHomeworkToFirestore(false);
+                }
+            }
+        }, (err) => {
+            this.handleFirestoreError(err);
+        });
+
+        // 3. Real-time Admin Chat Popup Broadcast
+        this.db.collection('curie_data').doc('chat').onSnapshot((doc) => {
+            if (doc.exists) {
+                const data = doc.data();
+                if (data && data.text && data.timestamp) {
+                    const elapsed = Date.now() - data.timestamp;
+                    const duration = data.duration || 25000;
+                    const remaining = duration - elapsed;
+                    if (remaining > 1500 && data.timestamp !== this.lastChatTimestamp) {
+                        this.lastChatTimestamp = data.timestamp;
+                        this.showAdminChatMessage(data.text, data.author || 'Админ', data.avatar, remaining, false);
+                    }
+                }
+            }
+        }, (err) => {
+            console.warn('Firestore chat listener notice:', err);
+        });
+    }
+
+    updateCloudStatus(status, text) {
+        this.cloudStatus = status;
+        const dot = document.getElementById('cloud-status-dot');
+        const txt = document.getElementById('cloud-status-text');
+        const adminIndicator = document.getElementById('admin-cloud-indicator');
+        const modalIcon = document.getElementById('cloud-modal-status-icon');
+        const modalTitle = document.getElementById('cloud-modal-status-title');
+        const modalDesc = document.getElementById('cloud-modal-status-desc');
+        const setupInstructions = document.getElementById('cloud-setup-instructions');
+
+        if (dot) {
+            dot.className = 'cloud-status-dot';
+            if (status === 'online') dot.classList.add('status-online');
+            else if (status === 'syncing') dot.classList.add('status-syncing');
+            else dot.classList.add('status-offline');
+        }
+
+        if (txt) {
+            txt.innerText = text;
+        }
+
+        if (adminIndicator) {
+            if (status === 'online') {
+                adminIndicator.innerText = '🟢 Онлайн';
+                adminIndicator.style.color = '#22c55e';
+                adminIndicator.style.background = 'rgba(34, 197, 94, 0.15)';
+                adminIndicator.style.borderColor = 'rgba(34, 197, 94, 0.3)';
+            } else if (status === 'syncing') {
+                adminIndicator.innerText = '🟡 Синхронизация...';
+                adminIndicator.style.color = '#eab308';
+                adminIndicator.style.background = 'rgba(234, 179, 8, 0.15)';
+                adminIndicator.style.borderColor = 'rgba(234, 179, 8, 0.3)';
+            } else {
+                adminIndicator.innerText = '🔴 Не подключено';
+                adminIndicator.style.color = '#ef4444';
+                adminIndicator.style.background = 'rgba(239, 68, 68, 0.15)';
+                adminIndicator.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+            }
+        }
+
+        if (modalIcon && modalTitle && modalDesc) {
+            if (status === 'online') {
+                modalIcon.innerText = '🟢';
+                modalTitle.innerText = 'Облако синхронизировано (raspisanie-3a39d)';
+                modalDesc.innerText = 'Все изменения расписания и ДЗ мгновенно транслируются на устройства всех учеников в реальном времени.';
+                if (setupInstructions) setupInstructions.style.display = 'none';
+            } else if (status === 'syncing') {
+                modalIcon.innerText = '🟡';
+                modalTitle.innerText = 'Подключение к облаку...';
+                modalDesc.innerText = 'Устанавливается соединение с Firestore сервером...';
+            } else {
+                modalIcon.innerText = '🔴';
+                modalTitle.innerText = 'База данных не найдена или требует создания';
+                modalDesc.innerText = 'В Firebase Console проекта raspisanie-3a39d требуется нажать «Создать базу данных». См. инструкцию ниже:';
+                if (setupInstructions) setupInstructions.style.display = 'block';
+            }
+        }
+    }
+
+    handleFirestoreError(err) {
+        console.warn('Firestore notice:', err);
+        const msg = (err && err.message) || String(err);
+        const code = (err && err.code) || '';
+
+        if (code === 'permission-denied') {
+            this.updateCloudStatus('error', '🔒 Доступ ограничен');
+            const setupInstructions = document.getElementById('cloud-setup-instructions');
+            if (setupInstructions) setupInstructions.style.display = 'block';
+        } else if (code === 'not-found' || code === 'failed-precondition' || msg.includes('does not exist') || msg.includes('404')) {
+            this.updateCloudStatus('error', '🔴 Облако: Создайте базу (Клик)');
+            const setupInstructions = document.getElementById('cloud-setup-instructions');
+            if (setupInstructions) setupInstructions.style.display = 'block';
+        } else {
+            this.updateCloudStatus('offline', '🔴 Автономный режим');
+        }
+    }
+
+    syncScheduleToFirestore(forceToast = false) {
+        if (!this.db || !this.isUserAdmin()) return;
+
+        this.updateCloudStatus('syncing', '🟡 Синхронизация...');
+        const userEmail = (window.authManager && window.authManager.currentUser && window.authManager.currentUser.email) || 'admin';
+
+        this.db.collection('curie_data').doc('schedule').set({
+            schedule: this.schedule,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedBy: userEmail
+        }).then(() => {
+            this.updateCloudStatus('online', '🟢 Облако: Синхронизировано');
+            if (forceToast) {
+                this.showToast('Расписание успешно загружено в облако! Все ученики его видят 🚀', '☁️');
+                if (window.soundEngine) window.soundEngine.playSuccess();
+            }
+        }).catch((err) => {
+            this.handleFirestoreError(err);
+            if (forceToast) {
+                this.showToast('Ошибка сохранения в облако. Проверьте Firestore в консоли!', '⚠️');
+                this.openCloudModal();
+            }
+        });
+    }
+
+    syncHomeworkToFirestore(forceToast = false) {
+        if (!this.db || !this.isUserAdmin()) return;
+
+        this.updateCloudStatus('syncing', '🟡 Синхронизация...');
+        const userEmail = (window.authManager && window.authManager.currentUser && window.authManager.currentUser.email) || 'admin';
+
+        this.db.collection('curie_data').doc('homework').set({
+            homework: this.homework,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedBy: userEmail
+        }).then(() => {
+            this.updateCloudStatus('online', '🟢 Облако: Синхронизировано');
+            if (forceToast) {
+                this.showToast('Домашнее задание загружено в облако! 🚀', '☁️');
+                if (window.soundEngine) window.soundEngine.playSuccess();
+            }
+        }).catch((err) => {
+            this.handleFirestoreError(err);
+            if (forceToast) {
+                this.showToast('Ошибка сохранения ДЗ в облако.', '⚠️');
+                this.openCloudModal();
+            }
+        });
+    }
+
+    syncAllToFirestore(forceToast = false) {
+        if (!this.db) {
+            this.showToast('Firebase не инициализирован. Нажмите на статус облака для справки.', '⚠️');
+            this.openCloudModal();
+            return;
+        }
+        if (!this.isUserAdmin()) {
+            this.showToast('Только администратор может отправлять изменения в облако!', '🔒');
+            return;
+        }
+
+        this.updateCloudStatus('syncing', '🟡 Синхронизация...');
+        const userEmail = (window.authManager && window.authManager.currentUser && window.authManager.currentUser.email) || 'admin';
+
+        const p1 = this.db.collection('curie_data').doc('schedule').set({
+            schedule: this.schedule,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedBy: userEmail
+        });
+
+        const p2 = this.db.collection('curie_data').doc('homework').set({
+            homework: this.homework,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedBy: userEmail
+        });
+
+        Promise.all([p1, p2]).then(() => {
+            this.updateCloudStatus('online', '🟢 Облако: Синхронизировано');
+            if (forceToast) {
+                this.showToast('Все данные (расписание и ДЗ) синхронизированы в облаке! 🎉', '☁️');
+                if (window.soundEngine) window.soundEngine.playSuccess();
+                if (window.effectsManager) window.effectsManager.confettiBurst();
+            }
+        }).catch((err) => {
+            this.handleFirestoreError(err);
+            if (forceToast) {
+                this.showToast('Не удалось отправить в облако. Проверьте консоль Firebase.', '⚠️');
+                this.openCloudModal();
+            }
+        });
+    }
+
+    pullFromFirestore(forceToast = false) {
+        if (!this.db) {
+            this.showToast('Firebase не подключен.', '⚠️');
+            return;
+        }
+
+        this.updateCloudStatus('syncing', '🟡 Загрузка из облака...');
+
+        const p1 = this.db.collection('curie_data').doc('schedule').get();
+        const p2 = this.db.collection('curie_data').doc('homework').get();
+
+        Promise.all([p1, p2]).then(([schedDoc, hwDoc]) => {
+            let updated = false;
+            if (schedDoc.exists && schedDoc.data().schedule) {
+                this.schedule = schedDoc.data().schedule;
+                localStorage.setItem('curie_schedule', JSON.stringify(this.schedule));
+                this.renderSchedule();
+                updated = true;
+            }
+            if (hwDoc.exists && Array.isArray(hwDoc.data().homework)) {
+                this.homework = hwDoc.data().homework;
+                localStorage.setItem('curie_homework', JSON.stringify(this.homework));
+                this.renderHomework();
+                this.updateStats();
+                updated = true;
+            }
+
+            this.updateCloudStatus('online', '🟢 Облако: Синхронизировано');
+            if (forceToast) {
+                this.showToast(updated ? 'Данные успешно обновлены из облака!' : 'В облаке пока нет сохраненных данных.', '📥');
+                if (window.soundEngine) window.soundEngine.playSuccess();
+            }
+        }).catch((err) => {
+            this.handleFirestoreError(err);
+            if (forceToast) {
+                this.showToast('Ошибка загрузки данных из облака.', '⚠️');
+                this.openCloudModal();
+            }
+        });
+    }
+
+    openCloudModal() {
+        const modal = document.getElementById('cloud-modal');
+        if (modal) modal.classList.add('active');
+    }
+
+    closeCloudModal() {
+        const modal = document.getElementById('cloud-modal');
+        if (modal) modal.classList.remove('active');
     }
 
     loadState() {
         try {
-            const savedSchedule = localStorage.getItem('curie_schedule');
-            this.schedule = savedSchedule ? JSON.parse(savedSchedule) : JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
+            // Auto-migration to official school schedule from photo
+            const schedVer = localStorage.getItem('curie_schedule_version');
+            if (schedVer !== 'v4_cards_official') {
+                this.schedule = JSON.parse(JSON.stringify(OFFICIAL_SCHOOL_SCHEDULE));
+                localStorage.setItem('curie_schedule_version', 'v4_cards_official');
+                try {
+                    localStorage.setItem('curie_schedule', JSON.stringify(this.schedule));
+                } catch (e) {}
+            } else {
+                const savedSchedule = localStorage.getItem('curie_schedule');
+                this.schedule = savedSchedule ? JSON.parse(savedSchedule) : JSON.parse(JSON.stringify(OFFICIAL_SCHOOL_SCHEDULE));
+            }
 
             // Clean out any teacher references from stored schedule
             if (this.schedule) {
@@ -131,6 +526,19 @@ class AppManager {
                         });
                     }
                 });
+            }
+
+            // If stored schedule has 0 lessons, populate with OFFICIAL_SCHOOL_SCHEDULE
+            const totalLessons = Object.values(this.schedule || {}).reduce((acc, arr) => acc + (Array.isArray(arr) ? arr.length : 0), 0);
+            if (totalLessons === 0) {
+                this.schedule = JSON.parse(JSON.stringify(OFFICIAL_SCHOOL_SCHEDULE));
+            }
+
+            // Ensure Wednesday lesson 1 adheres to the 20-minute rule (08:00 - 08:20)
+            if (this.schedule && Array.isArray(this.schedule.wed) && this.schedule.wed.length > 0) {
+                if (this.schedule.wed[0].time === '08:30 - 09:15' || this.schedule.wed[0].time === '08:00 - 08:40') {
+                    this.schedule.wed[0].time = '08:00 - 08:20';
+                }
             }
 
             const savedHw = localStorage.getItem('curie_homework');
@@ -168,6 +576,15 @@ class AppManager {
             }
         } catch (e) {
             console.error('Failed to save to localStorage:', e);
+        }
+
+        // Auto Sync with Firestore for Admin
+        if (this.db && this.isUserAdmin()) {
+            if (this.cloudSyncDebounceTimer) clearTimeout(this.cloudSyncDebounceTimer);
+            this.cloudSyncDebounceTimer = setTimeout(() => {
+                this.syncScheduleToFirestore(false);
+                this.syncHomeworkToFirestore(false);
+            }, 300);
         }
     }
 
@@ -478,8 +895,418 @@ class AppManager {
             closeChatBtn.addEventListener('click', () => this.hideAdminChatMessage(true));
         }
 
+        // Lesson Number / Bell Presets in Add/Edit Lesson modal
+        document.querySelectorAll('.preset-num-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const num = parseInt(btn.dataset.num, 10);
+                const daySelect = document.getElementById('lesson-day-select');
+                const day = daySelect ? daySelect.value : this.activeDay;
+                this.selectLessonPresetNum(num, day, true);
+            });
+        });
+
+        const lessonDaySelect = document.getElementById('lesson-day-select');
+        if (lessonDaySelect) {
+            lessonDaySelect.addEventListener('change', () => {
+                const activeBtn = document.querySelector('.preset-num-btn.active');
+                const num = activeBtn ? parseInt(activeBtn.dataset.num, 10) : 1;
+                this.selectLessonPresetNum(num, lessonDaySelect.value, true);
+            });
+        }
+
+        // Quick Subject chips
+        document.querySelectorAll('.subject-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const subjInput = document.getElementById('lesson-subject-input');
+                if (subjInput) {
+                    subjInput.value = chip.dataset.subj;
+                    subjInput.focus();
+                }
+            });
+        });
+
+        // Bells Table Modal (Расписание звонков)
+        const openBellsBtn = document.getElementById('open-bells-modal-btn');
+        const bellsModal = document.getElementById('bells-modal');
+        const closeBellsBtn = document.getElementById('close-bells-modal');
+
+        if (openBellsBtn && bellsModal) {
+            openBellsBtn.addEventListener('click', () => {
+                bellsModal.classList.add('active');
+                if (window.soundEngine) window.soundEngine.playTacoBell();
+            });
+        }
+        if (closeBellsBtn && bellsModal) {
+            closeBellsBtn.addEventListener('click', () => {
+                bellsModal.classList.remove('active');
+            });
+        }
+        if (bellsModal) {
+            bellsModal.addEventListener('click', (e) => {
+                if (e.target === bellsModal) bellsModal.classList.remove('active');
+            });
+        }
+
+        // Admin Bell Presets
+        const applyBellsBtn = document.getElementById('admin-apply-bells-btn');
+        if (applyBellsBtn) {
+            applyBellsBtn.addEventListener('click', () => this.applyBellSchedule());
+        }
+
+        const fillFullSchedBtn = document.getElementById('admin-fill-full-schedule-btn');
+        if (fillFullSchedBtn) {
+            fillFullSchedBtn.addEventListener('click', () => this.fillFullStandardSchedule());
+        }
+
+        const fillDaySlotsBtn = document.getElementById('admin-fill-day-slots-btn');
+        if (fillDaySlotsBtn) {
+            fillDaySlotsBtn.addEventListener('click', () => this.fillDaySlots());
+        }
+
+        // Cloud Real-time Sync UI & Modal
+        const cloudBtn = document.getElementById('cloud-sync-btn');
+        const cloudModal = document.getElementById('cloud-modal');
+        const closeCloudBtn = document.getElementById('close-cloud-modal');
+        const cloudSyncBtn = document.getElementById('cloud-modal-sync-btn');
+        const cloudPullBtn = document.getElementById('cloud-modal-pull-btn');
+        const copyRulesBtn = document.getElementById('copy-firestore-rules-btn');
+        const adminPushCloudBtn = document.getElementById('admin-force-push-cloud-btn');
+        const adminPullCloudBtn = document.getElementById('admin-force-pull-cloud-btn');
+
+        if (cloudBtn) {
+            cloudBtn.addEventListener('click', () => {
+                this.openCloudModal();
+                if (window.soundEngine) window.soundEngine.playLaser();
+            });
+        }
+        if (closeCloudBtn) {
+            closeCloudBtn.addEventListener('click', () => this.closeCloudModal());
+        }
+        if (cloudModal) {
+            cloudModal.addEventListener('click', (e) => {
+                if (e.target === cloudModal) this.closeCloudModal();
+            });
+        }
+        if (cloudSyncBtn) {
+            cloudSyncBtn.addEventListener('click', () => this.syncAllToFirestore(true));
+        }
+        if (cloudPullBtn) {
+            cloudPullBtn.addEventListener('click', () => this.pullFromFirestore(true));
+        }
+        if (adminPushCloudBtn) {
+            adminPushCloudBtn.addEventListener('click', () => this.syncAllToFirestore(true));
+        }
+        if (adminPullCloudBtn) {
+            adminPullCloudBtn.addEventListener('click', () => this.pullFromFirestore(true));
+        }
+        if (copyRulesBtn) {
+            copyRulesBtn.addEventListener('click', () => {
+                const rulesEl = document.getElementById('firestore-rules-snippet');
+                const rulesText = rulesEl ? rulesEl.innerText : '';
+                if (rulesText) {
+                    this.copyText(rulesText).then(() => {
+                        this.showToast('Правила Firestore скопированы! Вставьте их в Firebase Console -> Rules', '📋');
+                        if (window.soundEngine) window.soundEngine.playSuccess();
+                    });
+                }
+            });
+        }
+
+        // Official School Schedule Preset Button
+        const officialSchedBtn = document.getElementById('admin-fill-official-schedule-btn');
+        if (officialSchedBtn) {
+            officialSchedBtn.addEventListener('click', () => this.fillOfficialSchoolSchedule());
+        }
+
+        // Smart Text Schedule Importer Modal
+        const openSmartImportBtn = document.getElementById('admin-open-smart-import-btn');
+        const smartModal = document.getElementById('smart-schedule-modal');
+        const closeSmartBtn = document.getElementById('close-smart-schedule-modal');
+        const smartTextarea = document.getElementById('smart-schedule-textarea');
+        const smartSampleBtn = document.getElementById('smart-schedule-sample-btn');
+        const smartParseBtn = document.getElementById('smart-schedule-parse-btn');
+
+        if (openSmartImportBtn && smartModal) {
+            openSmartImportBtn.addEventListener('click', () => {
+                smartModal.classList.add('active');
+                if (smartTextarea && !smartTextarea.value.trim()) {
+                    smartTextarea.value = this.getOfficialScheduleSampleText();
+                }
+            });
+        }
+        if (closeSmartBtn && smartModal) {
+            closeSmartBtn.addEventListener('click', () => smartModal.classList.remove('active'));
+        }
+        if (smartModal) {
+            smartModal.addEventListener('click', (e) => {
+                if (e.target === smartModal) smartModal.classList.remove('active');
+            });
+        }
+        if (smartSampleBtn && smartTextarea) {
+            smartSampleBtn.addEventListener('click', () => {
+                smartTextarea.value = this.getOfficialScheduleSampleText();
+                this.showToast('Данные с фото вставлены в поле!', '📋');
+            });
+        }
+        if (smartParseBtn && smartTextarea) {
+            smartParseBtn.addEventListener('click', () => {
+                const ok = this.parseSmartScheduleText(smartTextarea.value);
+                if (ok && smartModal) {
+                    smartModal.classList.remove('active');
+                }
+            });
+        }
+
         // Quick bell check timer every minute
         setInterval(() => this.updateCurrentLessonHighlight(), 60000);
+    }
+
+    fillOfficialSchoolSchedule() {
+        if (!this.isUserAdmin()) {
+            this.showToast('Только администратор может изменять расписание!', '🔒');
+            return;
+        }
+        if (confirm('Применить официальное школьное расписание (по стикерам на фото)? Все уроки Пн-Пт будут заполнены.')) {
+            this.schedule = JSON.parse(JSON.stringify(OFFICIAL_SCHOOL_SCHEDULE));
+            this.saveState();
+            this.renderSchedule();
+            this.showToast('Официальное школьное расписание применено и сохранено!', '⚡');
+            if (window.effectsManager) window.effectsManager.confettiBurst();
+            if (window.soundEngine) window.soundEngine.playSuccess();
+        }
+    }
+
+    getOfficialScheduleSampleText() {
+        return `Понедельник (21 Сентября)
+8:00
+1. РоВ (34)
+2. история (23)
+3. рус. язык (36)
+4. вер.и стат. (16)
+5. алгебра (16)
+6. англ. (33,39)
+7. практ. по РЯ (36)
+
+Вторник (22 Сентября)
+8:00
+1. биология (21)
+2. рус. язык (36)
+3. геом. (16)
+4. физика (32)
+5. мат.практ. (16)
+6. инф./англ. (34,39)
+
+Среда (23 Сентября)
+8:00
+1. кл.час (34)
+2. геогр. (25)
+3. алгебра (16)
+4. биология (21)
+5. англ./инф. (33,34)
+6. химия (21)
+7. физ-ра (Е)
+8. история (23)
+
+Четверг (24 Сентября)
+8:00
+1. физика (32)
+2. геогр. (25)
+3. РМГ (34)
+4. геом. (16)
+5. англ. (33,39)
+6. литер. (36)
+
+Пятница (25 Сентября)
+9:55
+3. алгебра (16)
+4. физ-ра (Е)
+5. химия (21)
+6. труд (тех.,маст.)
+7. рус. язык (36)`;
+    }
+
+    parseSmartScheduleText(rawText) {
+        if (!this.isUserAdmin()) {
+            this.showToast('Только администратор может изменять расписание!', '🔒');
+            return false;
+        }
+        if (!rawText || !rawText.trim()) {
+            this.showToast('Пожалуйста, вставьте текст расписания!', '⚠️');
+            return false;
+        }
+
+        const lines = rawText.split('\n');
+        let currentDay = 'mon';
+        const newSchedule = { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [] };
+        let countParsed = 0;
+
+        const dayKeywords = [
+            { key: 'mon', regex: /(понедельник|monday|пн\b|mon\b)/i },
+            { key: 'tue', regex: /(вторник|tuesday|вт\b|tue\b)/i },
+            { key: 'wed', regex: /(среда|среду|wednesday|ср\b|wed\b)/i },
+            { key: 'thu', regex: /(четверг|thursday|чт\b|thu\b)/i },
+            { key: 'fri', regex: /(пятница|пятницу|friday|пт\b|fri\b)/i },
+            { key: 'sat', regex: /(суббота|субботу|saturday|сб\b|sat\b)/i }
+        ];
+
+        const expandSubject = (subj) => {
+            let s = subj.trim();
+            const lower = s.toLowerCase();
+            if (lower === 'ров' || lower === 'разговоры о важном') return 'Разговоры о важном (РоВ)';
+            if (lower === 'вер.и стат.' || lower === 'вер. и стат.' || lower === 'вероятность') return 'Вероятность и статистика';
+            if (lower === 'мат.практ.' || lower === 'мат. практ.') return 'Математический практикум';
+            if (lower === 'практ. по ря' || lower === 'практ. по р.я.') return 'Практикум по русскому языку';
+            if (lower === 'кл.час' || lower === 'кл. час' || lower === 'классный час') return 'Классный час (20 мин)';
+            if (lower === 'геом.' || lower === 'геометрия') return 'Геометрия';
+            if (lower === 'геогр.' || lower === 'география') return 'География';
+            if (lower === 'физ-ра' || lower === 'физкультура') return 'Физкультура';
+            if (lower === 'литер.' || lower === 'литература') return 'Литература';
+            if (lower === 'инф.' || lower === 'информатика') return 'Информатика';
+            if (lower === 'труд (тех.,маст.)' || lower === 'труд' || lower === 'технология') return 'Труд (тех., маст.)';
+            if (lower === 'рус. язык' || lower === 'русский язык') return 'Русский язык';
+            if (lower === 'англ.' || lower === 'английский') return 'Английский язык';
+            return s;
+        };
+
+        const expandRoom = (r) => {
+            let room = (r || '').trim();
+            if (room.toLowerCase() === 'е') return 'Спортзал (Е)';
+            return room;
+        };
+
+        for (let line of lines) {
+            line = line.trim();
+            if (!line) continue;
+
+            // Check if line indicates day name
+            let matchedDay = false;
+            for (const d of dayKeywords) {
+                if (d.regex.test(line) && !/^\d+[\.\)]/.test(line)) {
+                    currentDay = d.key;
+                    matchedDay = true;
+                    break;
+                }
+            }
+            if (matchedDay) continue;
+
+            // Match lesson number line: e.g. "1. РоВ (34)" or "3. алгебра (16)"
+            const lessonMatch = line.match(/^(\d+)[\.\)]\s*(.+?)(?:\s*[\(\[]([^\)\]]+)[\)\]])?\s*$/);
+            if (lessonMatch) {
+                const num = parseInt(lessonMatch[1], 10);
+                const rawSubj = lessonMatch[2].trim();
+                const rawRoom = lessonMatch[3] ? lessonMatch[3].trim() : '—';
+
+                const subject = expandSubject(rawSubj);
+                const room = expandRoom(rawRoom);
+                const time = this.getBellTime(currentDay, num);
+
+                newSchedule[currentDay].push({
+                    id: `${currentDay}_${num}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+                    num,
+                    time,
+                    subject,
+                    room
+                });
+                countParsed++;
+            }
+        }
+
+        if (countParsed === 0) {
+            this.showToast('Не удалось распознать уроки. Проверьте формат текста.', '⚠️');
+            return false;
+        }
+
+        this.schedule = newSchedule;
+        this.saveState();
+        this.renderSchedule();
+        this.showToast(`Успешно загружено уроков: ${countParsed}!`, '🎉');
+        if (window.effectsManager) window.effectsManager.confettiBurst();
+        if (window.soundEngine) window.soundEngine.playSuccess();
+        return true;
+    }
+
+    getBellTime(day, lessonNum) {
+        const isWed = day === 'wed';
+        const times = isWed ? BELL_TIMES.wednesday : BELL_TIMES.regular;
+        return times[lessonNum] || times[1] || '08:00 - 08:40';
+    }
+
+    selectLessonPresetNum(num, day, setTime = true) {
+        const timeInput = document.getElementById('lesson-time-input');
+        const wedHint = document.getElementById('lesson-wed-hint');
+
+        document.querySelectorAll('.preset-num-btn').forEach(b => {
+            b.classList.toggle('active', parseInt(b.dataset.num, 10) === num);
+        });
+
+        const isWedFirst = (day === 'wed' && num === 1);
+        if (wedHint) {
+            wedHint.style.display = isWedFirst ? 'inline-block' : 'none';
+        }
+
+        if (setTime && timeInput) {
+            timeInput.value = this.getBellTime(day, num);
+        }
+    }
+
+    applyBellSchedule() {
+        if (!this.isUserAdmin()) {
+            this.showToast('Только администратор может изменять звонки!', '🔒');
+            return;
+        }
+        let count = 0;
+        Object.keys(this.schedule).forEach(day => {
+            const list = this.schedule[day] || [];
+            list.forEach((l, index) => {
+                const lessonNum = index + 1;
+                l.num = lessonNum;
+                l.time = this.getBellTime(day, lessonNum);
+                count++;
+            });
+        });
+        this.saveState();
+        this.renderSchedule();
+        this.showToast(`Обновлено ${count} уроков по звонкам (в среду 1 урок = 20 мин)!`, '🔔');
+        if (window.soundEngine) window.soundEngine.playSuccess();
+        if (window.effectsManager) window.effectsManager.confettiBurst();
+    }
+
+    fillFullStandardSchedule() {
+        if (!this.isUserAdmin()) {
+            this.showToast('Только администратор может загружать расписание!', '🔒');
+            return;
+        }
+        if (!confirm('Заполнить полное школьное расписание на всю неделю по официальным звонкам?')) return;
+        this.schedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
+        this.saveState();
+        this.renderSchedule();
+        this.showToast('Школьное расписание успешно загружено!', '📚');
+        if (window.soundEngine) window.soundEngine.playSuccess();
+        if (window.effectsManager) window.effectsManager.confettiBurst();
+    }
+
+    fillDaySlots(day = null) {
+        if (!this.isUserAdmin()) {
+            this.showToast('Только администратор может добавлять уроки!', '🔒');
+            return;
+        }
+        const targetDay = day || this.activeDay;
+        const slotsCount = 7;
+        const newLessons = [];
+        for (let i = 1; i <= slotsCount; i++) {
+            newLessons.push({
+                id: `${targetDay}_${Date.now()}_${i}`,
+                num: i,
+                time: this.getBellTime(targetDay, i),
+                subject: (targetDay === 'wed' && i === 1) ? 'Классный час (20 мин)' : `Урок ${i}`,
+                room: '—'
+            });
+        }
+        this.schedule[targetDay] = newLessons;
+        this.saveState();
+        this.renderSchedule();
+        this.showToast(`Добавлено 7 уроков на ${this.dayNames[targetDay]}!`, '➕');
+        if (window.soundEngine) window.soundEngine.playSuccess();
     }
 
     setActiveDay(day) {
@@ -492,7 +1319,7 @@ class AppManager {
 
     openAddLessonModal(day = null) {
         if (!this.isUserAdmin()) {
-            alert('Только администратор может добавлять уроки!');
+            this.showToast('Только администратор может добавлять уроки!', '🔒');
             return;
         }
         const modal = document.getElementById('lesson-modal');
@@ -500,15 +1327,19 @@ class AppManager {
         const editIndexInput = document.getElementById('lesson-edit-index');
         const daySelect = document.getElementById('lesson-day-select');
         const subjectInput = document.getElementById('lesson-subject-input');
-        const timeInput = document.getElementById('lesson-time-input');
         const roomInput = document.getElementById('lesson-room-input');
+
+        const targetDay = day || this.activeDay;
+        const currentCount = (this.schedule[targetDay] || []).length;
+        const nextNum = Math.min(currentCount + 1, 8);
 
         if (modalTitle) modalTitle.innerText = '➕ Добавить урок';
         if (editIndexInput) editIndexInput.value = '-1';
-        if (daySelect) daySelect.value = day || this.activeDay;
+        if (daySelect) daySelect.value = targetDay;
         if (subjectInput) subjectInput.value = '';
-        if (timeInput) timeInput.value = '08:30 - 09:15';
         if (roomInput) roomInput.value = '';
+
+        this.selectLessonPresetNum(nextNum, targetDay, true);
 
         if (modal) modal.classList.add('active');
         if (window.soundEngine) window.soundEngine.playLaser();
@@ -516,7 +1347,7 @@ class AppManager {
 
     openEditLessonModal(day, index) {
         if (!this.isUserAdmin()) {
-            alert('Только администратор может изменять уроки!');
+            this.showToast('Только администратор может изменять уроки!', '🔒');
             return;
         }
         const lesson = (this.schedule[day] || [])[index];
@@ -530,12 +1361,16 @@ class AppManager {
         const timeInput = document.getElementById('lesson-time-input');
         const roomInput = document.getElementById('lesson-room-input');
 
-        if (modalTitle) modalTitle.innerText = '✏️ Редактировать урок';
+        const lessonNum = lesson.num || (index + 1);
+
+        if (modalTitle) modalTitle.innerText = `✏️ Редактировать урок №${lessonNum}`;
         if (editIndexInput) editIndexInput.value = index;
         if (daySelect) daySelect.value = day;
         if (subjectInput) subjectInput.value = lesson.subject || '';
-        if (timeInput) timeInput.value = lesson.time || '08:30 - 09:15';
+        if (timeInput) timeInput.value = lesson.time || this.getBellTime(day, lessonNum);
         if (roomInput) roomInput.value = lesson.room || '';
+
+        this.selectLessonPresetNum(lessonNum, day, false);
 
         if (modal) modal.classList.add('active');
         if (window.soundEngine) window.soundEngine.playLaser();
@@ -1085,6 +1920,13 @@ class AppManager {
             try {
                 localStorage.setItem('curie_admin_chat', JSON.stringify(payload));
             } catch (e) {}
+
+            // Broadcast to Firestore for all connected classmates!
+            if (this.db && this.isUserAdmin()) {
+                this.db.collection('curie_data').doc('chat').set(payload).catch(e => {
+                    console.warn('Chat broadcast cloud error:', e);
+                });
+            }
         }
 
         if (chatAuthor) chatAuthor.innerText = authorName;
@@ -1138,6 +1980,9 @@ class AppManager {
 
         if (clearStorage) {
             localStorage.removeItem('curie_admin_chat');
+            if (this.db && this.isUserAdmin()) {
+                this.db.collection('curie_data').doc('chat').delete().catch(e => {});
+            }
         }
     }
 

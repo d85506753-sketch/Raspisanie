@@ -291,6 +291,49 @@ body {
     color: #ffffff;
 }
 
+/* Cloud Sync Badge in Header */
+.cloud-badge-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.cloud-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+.cloud-status-dot.status-online {
+    background: #22c55e;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.7);
+}
+
+.cloud-status-dot.status-syncing {
+    background: #eab308;
+    box-shadow: 0 0 8px rgba(234, 179, 8, 0.7);
+    animation: pulseDot 1s infinite alternate;
+}
+
+.cloud-status-dot.status-offline {
+    background: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.7);
+}
+
+@keyframes pulseDot {
+    from { opacity: 0.4; transform: scale(0.85); }
+    to { opacity: 1; transform: scale(1.15); }
+}
+
 /* User Badge in Header */
 .header-user-badge {
     display: flex;
@@ -1148,6 +1191,123 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
+}
+
+/* Lesson Number Presets & Quick Subject Chips */
+.lesson-num-presets {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+}
+
+.preset-num-btn {
+    flex: 1;
+    min-width: 38px;
+    padding: 6px 0;
+    text-align: center;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.preset-num-btn:hover {
+    background: #2b313a;
+    border-color: var(--border-hover);
+    color: var(--text-main);
+}
+
+.preset-num-btn.active {
+    background: #1f365d;
+    border-color: #58a6ff;
+    color: #ffffff;
+}
+
+.quick-subject-chips {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+.subject-chip {
+    font-size: 0.73rem;
+    padding: 2px 7px;
+    border-radius: 12px;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: var(--transition);
+    user-select: none;
+}
+
+.subject-chip:hover {
+    background: #2b313a;
+    border-color: var(--border-hover);
+    color: var(--text-main);
+}
+
+/* Bells Table Modal */
+.bells-table-wrapper {
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+}
+
+.bells-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    text-align: left;
+}
+
+.bells-table th,
+.bells-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.bells-table th {
+    background: var(--bg-subtle);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.bells-table tr:last-child td {
+    border-bottom: none;
+}
+
+.bells-table tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.bells-table tr.highlight-wed {
+    background: rgba(227, 179, 65, 0.08);
+}
+
+.bells-table tr.highlight-wed td:last-child {
+    color: var(--accent-yellow);
+}
+
+.bell-num-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
 }
 
 /* Admin Sections inside Modal */

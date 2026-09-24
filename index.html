@@ -32,6 +32,12 @@
                     🔗 Поделиться
                 </button>
                 
+                <!-- Cloud Realtime Sync Status Badge -->
+                <button class="cool-btn cloud-badge-btn" id="cloud-sync-btn" title="Статус синхронизации с базой данных">
+                    <span class="cloud-status-dot status-syncing" id="cloud-status-dot"></span>
+                    <span id="cloud-status-text">Облако: Подключение...</span>
+                </button>
+                
                 <!-- Account Auth / Profile Badge -->
                 <button class="cool-btn" id="header-auth-btn" title="Войти в аккаунт Firebase">
                     👤 Войти
@@ -111,6 +117,9 @@
                         <span id="current-day-title" class="section-subtitle">Понедельник</span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
+                        <button class="cool-btn" id="open-bells-modal-btn" title="Посмотреть расписание звонков">
+                            🔔 Звонки
+                        </button>
                         <button class="cool-btn primary" id="quick-add-lesson-btn" style="display: none;" title="Добавить урок в текущий день">
                             + Добавить урок
                         </button>
@@ -219,7 +228,7 @@
 
     <!-- Add / Edit Lesson Modal (Admin Only) -->
     <div id="lesson-modal" class="modal-backdrop">
-        <div class="modal-window">
+        <div class="modal-window" style="max-width: 520px;">
             <div class="modal-header">
                 <h3 id="lesson-modal-title" style="font-weight: 700; font-size: 1.2rem;">➕ Добавить урок</h3>
                 <button class="modal-close-btn" id="close-lesson-modal">&times;</button>
@@ -237,22 +246,213 @@
                         <option value="sat">Суббота</option>
                     </select>
                 </div>
+
+                <!-- Quick Bell Presets (Lessons 1 to 8) -->
+                <div class="form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <label style="margin-bottom: 0;">Пресет звонка (номер урока):</label>
+                        <span id="lesson-wed-hint" style="font-size: 0.75rem; color: var(--accent-yellow); display: none;">⚡ В среду 1 урок: 20 мин (08:00 - 08:20)</span>
+                    </div>
+                    <div class="lesson-num-presets" id="lesson-num-presets">
+                        <button type="button" class="preset-num-btn active" data-num="1">1 ур</button>
+                        <button type="button" class="preset-num-btn" data-num="2">2 ур</button>
+                        <button type="button" class="preset-num-btn" data-num="3">3 ур</button>
+                        <button type="button" class="preset-num-btn" data-num="4">4 ур</button>
+                        <button type="button" class="preset-num-btn" data-num="5">5 ур</button>
+                        <button type="button" class="preset-num-btn" data-num="6">6 ур</button>
+                        <button type="button" class="preset-num-btn" data-num="7">7 ур</button>
+                        <button type="button" class="preset-num-btn" data-num="8">8 ур</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Время урока:</label>
+                    <input type="text" id="lesson-time-input" class="form-input" placeholder="08:00 - 08:40" value="08:00 - 08:40" required>
+                </div>
+
                 <div class="form-group">
                     <label>Название предмета:</label>
                     <input type="text" id="lesson-subject-input" class="form-input" placeholder="Например: Геометрия, Физика, Информатика..." required>
+                    <!-- Quick Subject Chips -->
+                    <div class="quick-subject-chips">
+                        <span class="subject-chip" data-subj="Алгебра">Алгебра</span>
+                        <span class="subject-chip" data-subj="Геометрия">Геометрия</span>
+                        <span class="subject-chip" data-subj="Русский язык">Русский</span>
+                        <span class="subject-chip" data-subj="Литература">Литература</span>
+                        <span class="subject-chip" data-subj="Физика">Физика</span>
+                        <span class="subject-chip" data-subj="Химия">Химия</span>
+                        <span class="subject-chip" data-subj="Биология">Биология</span>
+                        <span class="subject-chip" data-subj="История">История</span>
+                        <span class="subject-chip" data-subj="Обществознание">Общество</span>
+                        <span class="subject-chip" data-subj="Английский язык">Английский</span>
+                        <span class="subject-chip" data-subj="Информатика">Информатика</span>
+                        <span class="subject-chip" data-subj="Физкультура">Физ-ра</span>
+                        <span class="subject-chip" data-subj="География">География</span>
+                        <span class="subject-chip" data-subj="Классный час">Классный час</span>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Время урока:</label>
-                    <input type="text" id="lesson-time-input" class="form-input" placeholder="08:30 - 09:15" value="08:30 - 09:15">
-                </div>
+
                 <div class="form-group">
                     <label>Кабинет:</label>
-                    <input type="text" id="lesson-room-input" class="form-input" placeholder="Например: 304 или Спортзал">
+                    <input type="text" id="lesson-room-input" class="form-input" placeholder="Например: 214 или Спортзал">
                 </div>
                 <div style="margin-top: 20px;">
                     <button type="submit" class="cool-btn primary" style="width: 100%; justify-content: center;">Сохранить урок</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Cloud Realtime Sync Info Modal -->
+    <div id="cloud-modal" class="modal-backdrop">
+        <div class="modal-window" style="max-width: 540px;">
+            <div class="modal-header">
+                <h3 style="font-weight: 700; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
+                    <span>☁️</span> Облачная синхронизация
+                </h3>
+                <button class="modal-close-btn" id="close-cloud-modal">&times;</button>
+            </div>
+            <div class="cloud-modal-body" style="padding: 10px 0; font-size: 0.9rem; line-height: 1.5;">
+                <div class="cloud-status-banner" id="cloud-modal-status-banner" style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 10px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.25); margin-bottom: 16px;">
+                    <span id="cloud-modal-status-icon" style="font-size: 1.6rem;">🟢</span>
+                    <div>
+                        <div id="cloud-modal-status-title" style="font-weight: 700; color: #fff;">Облако синхронизировано</div>
+                        <div id="cloud-modal-status-desc" style="font-size: 0.82rem; color: var(--text-muted);">Все изменения расписания и ДЗ мгновенно транслируются на устройства всех учеников в реальном времени.</div>
+                    </div>
+                </div>
+
+                <div id="cloud-setup-instructions" style="display: none; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+                    <h4 style="font-weight: 700; font-size: 0.95rem; margin-bottom: 8px; color: var(--accent);">
+                        ⚡ Как включить синхронизацию для всех в Firebase Console (1 минута):
+                    </h4>
+                    <ol style="margin-left: 20px; font-size: 0.85rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 8px;">
+                        <li>Откройте Firestore в Firebase: <a href="https://console.firebase.google.com/project/raspisanie-3a39d/firestore" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: underline; font-weight: 600;">Перейти в Firebase Console (raspisanie-3a39d)</a></li>
+                        <li>Нажмите кнопку <b>«Создать базу данных»</b> (Create database).</li>
+                        <li>Выберите регион (например <code>eur3 (europe-west)</code>) и нажмите «Далее».</li>
+                        <li>Выберите <b>«Начать в тестовом режиме»</b> (Start in test mode) или перейдите на вкладку <b>«Правила»</b> (Rules) и вставьте:</li>
+                    </ol>
+                    <div style="position: relative; margin-top: 10px;">
+                        <pre style="background: #0d1117; padding: 10px; border-radius: 6px; font-size: 0.78rem; overflow-x: auto; color: #58a6ff; border: 1px solid #30363d;" id="firestore-rules-snippet">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null && (
+        request.auth.token.email == 'roganinstepan36@gmail.com' ||
+        request.auth.token.email == 'steamvichsteam@gmail.com'
+      );
+    }
+  }
+}</pre>
+                        <button class="cool-btn" id="copy-firestore-rules-btn" style="position: absolute; top: 6px; right: 6px; font-size: 0.75rem; padding: 4px 8px;">📋 Копировать правила</button>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px;">
+                    <button class="cool-btn primary" id="cloud-modal-sync-btn" style="flex: 1; justify-content: center;">
+                        ☁️ Отправить данные в облако
+                    </button>
+                    <button class="cool-btn" id="cloud-modal-pull-btn" style="flex: 1; justify-content: center;">
+                        🔄 Загрузить из облака
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bell Schedule Modal (Расписание звонков) -->
+    <div id="bells-modal" class="modal-backdrop">
+        <div class="modal-window" style="max-width: 480px;">
+            <div class="modal-header">
+                <h3 style="font-weight: 700; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
+                    <span>🔔</span> Расписание звонков
+                </h3>
+                <button class="modal-close-btn" id="close-bells-modal">&times;</button>
+            </div>
+            
+            <div class="bells-table-wrapper">
+                <table class="bells-table">
+                    <thead>
+                        <tr>
+                            <th>Урок</th>
+                            <th>Пн, Вт, Чт, Пт, Сб</th>
+                            <th>Среда</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="highlight-wed">
+                            <td><span class="bell-num-badge">1</span></td>
+                            <td>08:00 - 08:40 (40 мин)</td>
+                            <td><strong>08:00 - 08:20 (20 мин)</strong></td>
+                        </tr>
+                        <tr>
+                            <td><span class="bell-num-badge">2</span></td>
+                            <td>08:55 - 09:35</td>
+                            <td>08:55 - 09:35</td>
+                        </tr>
+                        <tr>
+                            <td><span class="bell-num-badge">3</span></td>
+                            <td>09:55 - 10:35</td>
+                            <td>09:55 - 10:35</td>
+                        </tr>
+                        <tr>
+                            <td><span class="bell-num-badge">4</span></td>
+                            <td>10:55 - 11:35</td>
+                            <td>10:55 - 11:35</td>
+                        </tr>
+                        <tr>
+                            <td><span class="bell-num-badge">5</span></td>
+                            <td>11:55 - 12:35</td>
+                            <td>11:55 - 12:35</td>
+                        </tr>
+                        <tr>
+                            <td><span class="bell-num-badge">6</span></td>
+                            <td>12:50 - 13:30</td>
+                            <td>12:50 - 13:30</td>
+                        </tr>
+                        <tr>
+                            <td><span class="bell-num-badge">7</span></td>
+                            <td>13:40 - 14:20</td>
+                            <td>13:40 - 14:20</td>
+                        </tr>
+                        <tr>
+                            <td><span class="bell-num-badge">8</span></td>
+                            <td>14:30 - 15:10</td>
+                            <td>14:30 - 15:10</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top: 14px; padding: 10px 12px; background: rgba(227, 179, 65, 0.1); border: 1px solid rgba(227, 179, 65, 0.25); border-radius: var(--radius-sm); font-size: 0.82rem; color: var(--accent-yellow);">
+                ⚡ <strong>Специальное правило:</strong> В среду 1 урок длится ровно <strong>20 минут</strong> (08:00 - 08:20).
+            </div>
+        </div>
+    </div>
+
+    <!-- Smart Schedule Text Importer Modal -->
+    <div id="smart-schedule-modal" class="modal-backdrop">
+        <div class="modal-window" style="max-width: 580px;">
+            <div class="modal-header">
+                <h3 style="font-weight: 700; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
+                    <span>📝</span> Умный импортер расписания из текста
+                </h3>
+                <button class="modal-close-btn" id="close-smart-schedule-modal">&times;</button>
+            </div>
+            <div style="padding: 10px 0; font-size: 0.88rem; color: var(--text-secondary);">
+                <p style="margin-bottom: 8px;">
+                    Вставьте текст расписания (из чата, дневника или стикеров). Система автоматически распознает дни, номера уроков, предметы, кабинеты и выставит официальные звонки (включая 20 минут в среду):
+                </p>
+                <textarea id="smart-schedule-textarea" class="form-input" style="height: 200px; font-family: monospace; font-size: 0.85rem; line-height: 1.4; resize: vertical; margin-bottom: 12px;" placeholder="Понедельник
+1. РоВ (34)
+2. история (23)
+3. рус. язык (36)
+..."></textarea>
+                <div style="display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap;">
+                    <button type="button" class="cool-btn" id="smart-schedule-sample-btn">📋 Вставить данные с фото</button>
+                    <button type="button" class="cool-btn primary" id="smart-schedule-parse-btn">⚡ Распознать и заполнить</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -412,6 +612,28 @@
 
             <!-- Admin Controls (shown when authenticated) -->
             <div id="admin-panel-section" style="display: none;">
+                <!-- 0. Realtime Cloud Sync Section -->
+                <div class="admin-card-section" style="border-color: rgba(56, 139, 253, 0.4); background: rgba(56, 139, 253, 0.05);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <h4 class="admin-section-subtitle" style="margin: 0; color: #58a6ff;">☁️ Облачная база данных (Firebase Firestore)</h4>
+                        <span id="admin-cloud-indicator" class="role-badge" style="background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3);">🟢 Онлайн</span>
+                    </div>
+                    <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px;">
+                        Все изменения расписания, ДЗ и сообщений автоматически отправляются в облако. Ваши одноклассники видят актуальные данные на любых устройствах в реальном времени.
+                    </p>
+                    <div class="presets-grid">
+                        <button class="cool-btn primary" id="admin-force-push-cloud-btn" style="justify-content: center;">
+                            ☁️ Отправить всё в облако (Синхронизировать)
+                        </button>
+                        <button class="cool-btn" id="admin-force-pull-cloud-btn" style="justify-content: center;">
+                            🔄 Принудительно скачать из облака
+                        </button>
+                        <a href="https://console.firebase.google.com/project/raspisanie-3a39d/firestore" target="_blank" rel="noopener noreferrer" class="cool-btn" style="justify-content: center; text-decoration: none;">
+                            ⚙️ Открыть Firestore в Firebase Console
+                        </a>
+                    </div>
+                </div>
+
                 <!-- 1. Admin Schedule Management -->
                 <div class="admin-card-section">
                     <h4 class="admin-section-subtitle">📋 Управление Расписанием</h4>
@@ -422,6 +644,28 @@
                         <button class="cool-btn primary" id="admin-add-lesson-btn" style="width: 100%; justify-content: center;">➕ Добавить новый урок</button>
                         <button class="cool-btn" id="admin-clear-day-btn" style="color: var(--accent-yellow); justify-content: center;">🗑️ Очистить текущий день</button>
                         <button class="cool-btn" id="admin-reset-schedule-btn" style="color: var(--danger); justify-content: center;">🔄 Очистить всё расписание</button>
+                    </div>
+                </div>
+
+                <!-- Presets: Bell Schedule & School Grid -->
+                <div class="admin-card-section">
+                    <h4 class="admin-section-subtitle">🔔 Пресеты расписания и звонков</h4>
+                    <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px;">
+                        Официальное расписание по стикерам: Пн-Пт, кабинеты, точные звонки (в среду 1 урок 20 минут: 08:00 - 08:20, в пятницу уроки с 09:55 с 3-го урока).
+                    </p>
+                    <div class="presets-grid">
+                        <button class="cool-btn primary" id="admin-fill-official-schedule-btn" style="justify-content: center; font-weight: 700; grid-column: 1 / -1;">
+                            ⚡ Применить официальное расписание (по карточкам)
+                        </button>
+                        <button class="cool-btn" id="admin-apply-bells-btn" style="justify-content: center;">
+                            🔔 Исправить звонки во всех уроках
+                        </button>
+                        <button class="cool-btn" id="admin-open-smart-import-btn" style="justify-content: center;">
+                            📝 Умный импорт из текста
+                        </button>
+                        <button class="cool-btn" id="admin-fill-day-slots-btn" style="justify-content: center; grid-column: 1 / -1;">
+                            ➕ Заполнить 7 уроков на текущий день
+                        </button>
                     </div>
                 </div>
 
@@ -562,6 +806,7 @@
     <!-- Firebase SDK (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
     <!-- Scripts -->
     <script src="js/firebase-config.js"></script>

@@ -438,14 +438,18 @@ class AdminAbuse {
 
     applyPresetGym() {
         const curDay = window.app.activeDay;
-        const times = ['08:30 - 09:15', '09:25 - 10:10', '10:25 - 11:10', '11:25 - 12:10', '12:20 - 13:05', '13:15 - 14:00', '14:10 - 14:55'];
-        window.app.schedule[curDay] = times.map((t, i) => ({
-            id: `${curDay}_gym_${i}`,
-            num: i + 1,
-            time: t,
-            subject: 'Физкультура (Марафон 42 км) 🏃‍♂️',
-            room: 'Стадион'
-        }));
+        const count = 7;
+        const list = [];
+        for (let i = 0; i < count; i++) {
+            list.push({
+                id: `${curDay}_gym_${i}`,
+                num: i + 1,
+                time: window.app.getBellTime(curDay, i + 1),
+                subject: 'Физкультура (Марафон 42 км) 🏃‍♂️',
+                room: 'Стадион'
+            });
+        }
+        window.app.schedule[curDay] = list;
         window.app.saveState();
         window.app.renderSchedule();
         window.app.showAnnouncement('💪 ДЕНЬ СПОРТА: 7 уроков физкультуры подряд!');
@@ -454,13 +458,12 @@ class AdminAbuse {
 
     applyPresetCybersport() {
         const curDay = window.app.activeDay;
-        const times = ['08:30 - 09:15', '09:25 - 10:10', '10:25 - 11:10', '11:25 - 12:10', '12:20 - 13:05', '13:15 - 14:00'];
         const games = ['CS 2 (Разминка на Mirage)', 'Dota 2 (Мид или фид)', 'Minecraft (Строительство школы)', 'Brawl Stars (Турнир 3v3)', 'Roblox', 'Кибер-Час с чаем'];
-        window.app.schedule[curDay] = times.map((t, i) => ({
+        window.app.schedule[curDay] = games.map((g, i) => ({
             id: `${curDay}_cyber_${i}`,
             num: i + 1,
-            time: t,
-            subject: games[i] || 'Киберспорт 🎮',
+            time: window.app.getBellTime(curDay, i + 1),
+            subject: g,
             room: 'Компьютерный клуб 310'
         }));
         window.app.saveState();

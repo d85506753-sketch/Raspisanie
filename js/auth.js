@@ -108,6 +108,15 @@ class AuthManager {
                 window.adminAbuse.unlock(false);
             }
 
+            // Auto-seed cloud schedule if cloud is empty
+            if (this.isAdmin && window.app && window.app.db) {
+                window.app.db.collection('curie_data').doc('schedule').get().then(doc => {
+                    if (!doc.exists) {
+                        window.app.syncAllToFirestore(false);
+                    }
+                }).catch(() => {});
+            }
+
             if (window.app) {
                 window.app.renderSchedule();
                 window.app.renderHomework();
