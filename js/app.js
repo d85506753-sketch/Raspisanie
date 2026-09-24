@@ -186,6 +186,8 @@ class AppManager {
         this.checkActiveAdminChat();
         this.setupCrossTabChatSync();
         this.initFirestore();
+        this.setupMobileBottomNav();
+        this.setupMobileSwipeGestures();
     }
 
     // --- CLOUD FIRESTORE REAL-TIME SYNCHRONIZATION ---
@@ -1061,6 +1063,119 @@ class AppManager {
         setInterval(() => this.updateCurrentLessonHighlight(), 60000);
     }
 
+    setupMobileBottomNav() {
+        const navSchedule = document.getElementById('mob-nav-schedule');
+        const navHomework = document.getElementById('mob-nav-homework');
+        const navBells = document.getElementById('mob-nav-bells');
+        const navCloud = document.getElementById('mob-nav-cloud');
+        const navAdmin = document.getElementById('mob-nav-admin');
+        const navAuth = document.getElementById('mob-nav-auth');
+
+        const setNavActive = (activeEl) => {
+            document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active'));
+            if (activeEl) activeEl.classList.add('active');
+        };
+
+        if (navSchedule) {
+            navSchedule.addEventListener('click', () => {
+                setNavActive(navSchedule);
+                const schedEl = document.getElementById('schedule-section');
+                if (schedEl) {
+                    schedEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        }
+
+        if (navHomework) {
+            navHomework.addEventListener('click', () => {
+                setNavActive(navHomework);
+                const hwEl = document.getElementById('homework-section');
+                if (hwEl) {
+                    hwEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        }
+
+        if (navBells) {
+            navBells.addEventListener('click', () => {
+                const bellsModal = document.getElementById('bells-modal');
+                if (bellsModal) {
+                    bellsModal.classList.add('active');
+                    if (window.soundEngine) window.soundEngine.playTacoBell();
+                }
+            });
+        }
+
+        if (navCloud) {
+            navCloud.addEventListener('click', () => {
+                this.openCloudModal();
+                if (window.soundEngine) window.soundEngine.playLaser();
+            });
+        }
+
+        if (navAdmin) {
+            navAdmin.addEventListener('click', () => {
+                if (window.adminAbuse) {
+                    window.adminAbuse.openModal();
+                }
+            });
+        }
+
+        if (navAuth) {
+            navAuth.addEventListener('click', () => {
+                if (window.authManager && window.authManager.currentUser) {
+                    this.showToast(`Вы вошли как: ${window.authManager.currentUser.email}`, '👤');
+                } else {
+                    const authModal = document.getElementById('auth-modal');
+                    if (authModal) authModal.classList.add('active');
+                }
+            });
+        }
+    }
+
+    setupMobileSwipeGestures() {
+        const scheduleSection = document.getElementById('schedule-section');
+        if (!scheduleSection) return;
+
+        let startX = 0;
+        let startY = 0;
+        let endX = 0;
+        let endY = 0;
+
+        const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+
+        scheduleSection.addEventListener('touchstart', (e) => {
+            if (!e.changedTouches || !e.changedTouches.length) return;
+            startX = e.changedTouches[0].clientX;
+            startY = e.changedTouches[0].clientY;
+        }, { passive: true });
+
+        scheduleSection.addEventListener('touchend', (e) => {
+            if (!e.changedTouches || !e.changedTouches.length) return;
+            endX = e.changedTouches[0].clientX;
+            endY = e.changedTouches[0].clientY;
+
+            const diffX = endX - startX;
+            const diffY = endY - startY;
+
+            // Horizontal swipe of at least 45px, predominantly horizontal
+            if (Math.abs(diffX) > 45 && Math.abs(diffX) > Math.abs(diffY) * 1.4) {
+                const curIdx = days.indexOf(this.activeDay);
+                if (diffX < 0) {
+                    // Swipe Left -> Next Day
+                    const nextDay = days[(curIdx + 1) % days.length];
+                    this.setActiveDay(nextDay);
+                    if (window.soundEngine) window.soundEngine.playLaser();
+                } else {
+                    // Swipe Right -> Prev Day
+                    const prevDay = days[(curIdx - 1 + days.length) % days.length];
+                    this.setActiveDay(prevDay);
+                    if (window.soundEngine) window.soundEngine.playLaser();
+                }
+            }
+        }, { passive: true });
+    }
+
     fillOfficialSchoolSchedule() {
         if (!this.isUserAdmin()) {
             this.showToast('Только администратор может изменять расписание!', '🔒');
@@ -1312,7 +1427,13 @@ class AppManager {
     setActiveDay(day) {
         this.activeDay = day;
         document.querySelectorAll('.day-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.day === day);
+            const isActive = btn.dataset.day === day;
+            btn.classList.toggle('active', isActive);
+            if (isActive) {
+                try {
+                    btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                } catch (e) {}
+            }
         });
         this.renderSchedule();
     }
@@ -1420,7 +1541,7 @@ class AppManager {
                             <span class="lesson-time">⏰ ${this.escapeHtml(l.time)}</span>
                         </div>
                         <div class="lesson-details">
-                            <span class="lesson-room ${window.adminAbuse && window.adminAbuse.isLiveEdit ? 'editable' : ''}" data-field="room">Кабинет: <strong>${this.escapeHtml(l.room || '—')}</strong></span>
+                            <span class="lesson-room ${window.adminAbuse && window.adminAbuse.isLiveEdit ? 'editable' : ''}" data-field="room">Кабинет: <strong class="lesson-room-pill">${this.escapeHtml(l.room || '—')}</strong></span>
                         </div>
                     </div>
                     <div class="lesson-actions">
@@ -1748,12 +1869,24 @@ class AppManager {
     updateStats() {
         const total = this.homework.length;
         const done = this.homework.filter(h => h.completed).length;
+        const pending = total - done;
         const percent = total > 0 ? Math.round((done / total) * 100) : 100;
 
         const statText = document.getElementById('hw-stat-text');
         const progressBar = document.getElementById('hw-progress-bar');
+        const mobHwBadge = document.getElementById('mob-hw-badge');
+
         if (statText) statText.innerText = `${done} из ${total} выполнено (${percent}%)`;
         if (progressBar) progressBar.style.width = `${percent}%`;
+
+        if (mobHwBadge) {
+            if (pending > 0) {
+                mobHwBadge.innerText = pending;
+                mobHwBadge.style.display = 'flex';
+            } else {
+                mobHwBadge.style.display = 'none';
+            }
+        }
     }
 
     updateCurrentLessonHighlight() {

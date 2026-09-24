@@ -103,6 +103,16 @@ class AuthManager {
                 addHwBtn.style.display = this.isAdmin ? 'inline-flex' : 'none';
             }
 
+            // Reveal admin buttons and mobile nav tabs if admin
+            const mobNavAdmin = document.getElementById('mob-nav-admin');
+            const mobNavAuth = document.getElementById('mob-nav-auth');
+            if (mobNavAdmin) mobNavAdmin.style.display = this.isAdmin ? 'flex' : 'none';
+            if (mobNavAuth) {
+                mobNavAuth.style.display = this.isAdmin ? 'none' : 'flex';
+                const label = mobNavAuth.querySelector('.mob-nav-label');
+                if (label) label.innerText = user ? 'Профиль' : 'Вход';
+            }
+
             // Auto-unlock admin abuse panel
             if (this.isAdmin && window.adminAbuse) {
                 window.adminAbuse.unlock(false);
@@ -131,6 +141,15 @@ class AuthManager {
             if (quickAddBtn) quickAddBtn.style.display = 'none';
             if (adminBadge) adminBadge.style.display = 'none';
             if (addHwBtn) addHwBtn.style.display = 'none';
+
+            const mobNavAdmin = document.getElementById('mob-nav-admin');
+            const mobNavAuth = document.getElementById('mob-nav-auth');
+            if (mobNavAdmin) mobNavAdmin.style.display = 'none';
+            if (mobNavAuth) {
+                mobNavAuth.style.display = 'flex';
+                const label = mobNavAuth.querySelector('.mob-nav-label');
+                if (label) label.innerText = 'Вход';
+            }
 
             if (window.adminAbuse) {
                 window.adminAbuse.isAuthenticated = false;

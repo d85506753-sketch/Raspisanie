@@ -2,7 +2,12 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CurieSchedule">
+    <meta name="format-detection" content="telephone=no">
     <title>CurieSchedule — Расписание уроков и ДЗ</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🗓️</text></svg>">
     <link rel="manifest" href="manifest.json">
@@ -110,7 +115,7 @@
         <!-- Main Workspace Grid -->
         <main class="main-grid">
             <!-- Left Column: Schedule -->
-            <section class="section-card">
+            <section class="section-card" id="schedule-section">
                 <div class="section-header">
                     <div>
                         <h2 class="section-title">📅 Расписание уроков</h2>
@@ -135,7 +140,7 @@
             </section>
 
             <!-- Right Column: Homework Tracker -->
-            <section class="section-card">
+            <section class="section-card" id="homework-section">
                 <div class="section-header">
                     <div>
                         <h2 class="section-title">📝 Домашнее задание</h2>
@@ -802,6 +807,35 @@ service cloud.firestore {
             <div class="chat-popup-progress-bar" id="chat-popup-progress-bar"></div>
         </div>
     </div>
+
+    <!-- Mobile Bottom Navigation Bar (Visible exclusively on mobile screens <= 768px) -->
+    <nav class="mobile-bottom-nav" id="mobile-bottom-nav" aria-label="Мобильная навигация">
+        <button class="mobile-nav-item active" id="mob-nav-schedule" type="button" title="Уроки">
+            <span class="mob-nav-icon">🗓️</span>
+            <span class="mob-nav-label">Уроки</span>
+        </button>
+        <button class="mobile-nav-item" id="mob-nav-homework" type="button" title="Домашнее задание">
+            <span class="mob-nav-icon">📝</span>
+            <span class="mob-nav-label">ДЗ</span>
+            <span class="mob-badge" id="mob-hw-badge" style="display: none;">0</span>
+        </button>
+        <button class="mobile-nav-item" id="mob-nav-bells" type="button" title="Звонки">
+            <span class="mob-nav-icon">🔔</span>
+            <span class="mob-nav-label">Звонки</span>
+        </button>
+        <button class="mobile-nav-item" id="mob-nav-cloud" type="button" title="Статус облачной синхронизации">
+            <span class="mob-nav-icon">☁️</span>
+            <span class="mob-nav-label">Облако</span>
+        </button>
+        <button class="mobile-nav-item" id="mob-nav-admin" type="button" style="display: none;" title="Панель администратора">
+            <span class="mob-nav-icon">⚙️</span>
+            <span class="mob-nav-label">Админ</span>
+        </button>
+        <button class="mobile-nav-item" id="mob-nav-auth" type="button" title="Вход в аккаунт">
+            <span class="mob-nav-icon">👤</span>
+            <span class="mob-nav-label">Вход</span>
+        </button>
+    </nav>
 
     <!-- Firebase SDK (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
