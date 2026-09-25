@@ -14,10 +14,11 @@ window.FIREBASE_CONFIG = {
 };
 
 // Список email-адресов администраторов
-// И ТОЛЬКО ЭТИ ДВА EMAIL имеют права Администратора!
+// И ТОЛЬКО ЭТИ EMAIL имеют права Администратора!
 window.ADMIN_EMAILS = [
     "roganinstepan36@gmail.com",
-    "steamvichsteam@gmail.com"
+    "steamvichsteam@gmail.com",
+    "m69227503@gmail.com"
 ];
 
 // Проверка: заполнен ли конфиг Firebase пользователем
