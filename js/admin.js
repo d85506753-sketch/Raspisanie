@@ -407,6 +407,14 @@ class AdminAbuse {
         const badge = document.getElementById('admin-badge-indicator');
         if (badge) badge.style.display = 'flex';
 
+        const mobAdminBox = document.getElementById('mob-hub-admin-box');
+        if (mobAdminBox) mobAdminBox.style.display = 'block';
+
+        const mobNavAccountIcon = document.getElementById('mob-nav-account-icon');
+        const mobNavAccountLabel = document.getElementById('mob-nav-account-label');
+        if (mobNavAccountIcon) mobNavAccountIcon.innerText = '👑';
+        if (mobNavAccountLabel) mobNavAccountLabel.innerText = 'Админ';
+
         if (window.app) {
             window.app.renderSchedule();
             window.app.renderHomework();

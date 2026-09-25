@@ -151,6 +151,10 @@ class AppManager {
         this.bannerAnnouncement = '';
         this.chatTimer = null;
 
+        // Registration-Only Class & AI Chats
+        this.classChatMessages = [];
+        this.activeChatRoom = 'general';
+
         // Cloud Firestore Synchronization
         this.db = null;
         this.cloudStatus = 'connecting';
@@ -170,12 +174,17 @@ class AppManager {
         this.init();
     }
 
+    isUserLoggedIn() {
+        return Boolean((window.authManager && window.authManager.currentUser) || this.isUserAdmin());
+    }
+
     isUserAdmin() {
         return (window.authManager && window.authManager.isAdmin) || 
                (window.adminAbuse && window.adminAbuse.isAuthenticated);
     }
 
     init() {
+        document.body.classList.add('mob-tab-schedule');
         this.loadState();
         this.detectCurrentDay();
         this.renderSchedule();
@@ -188,6 +197,7 @@ class AppManager {
         this.initFirestore();
         this.setupMobileBottomNav();
         this.setupMobileSwipeGestures();
+        this.syncClassChatAuthUI();
     }
 
     // --- CLOUD FIRESTORE REAL-TIME SYNCHRONIZATION ---
@@ -290,6 +300,22 @@ class AppManager {
             }
         }, (err) => {
             console.warn('Firestore abuse listener notice:', err);
+        });
+
+        // 5. Real-time Registered Class Chat Messages
+        this.db.collection('curie_data').doc('class_chat').onSnapshot((doc) => {
+            if (doc.exists) {
+                const data = doc.data();
+                if (data && Array.isArray(data.messages)) {
+                    this.classChatMessages = data.messages;
+                    try {
+                        localStorage.setItem('curie_class_chat_msgs', JSON.stringify(this.classChatMessages));
+                    } catch (e) {}
+                    this.renderClassChatMessages();
+                }
+            }
+        }, (err) => {
+            console.warn('Firestore class_chat listener notice:', err);
         });
     }
 
@@ -568,6 +594,32 @@ class AppManager {
             this.bannerAnnouncement = savedBanner || '';
             if (this.bannerAnnouncement) {
                 this.showAnnouncement(this.bannerAnnouncement, false);
+            }
+
+            const savedChatMsgs = localStorage.getItem('curie_class_chat_msgs');
+            if (savedChatMsgs) {
+                this.classChatMessages = JSON.parse(savedChatMsgs);
+            } else {
+                this.classChatMessages = [
+                    {
+                        id: 'msg_welcome_1',
+                        room: 'general',
+                        text: 'Привет! Это общий чат класса. Писать сюда и открывать чаты ИИ могут только зарегистрированные ученики 🚀',
+                        authorName: 'Админ',
+                        authorEmail: 'admin',
+                        isAdmin: true,
+                        createdAt: Date.now() - 3600000
+                    },
+                    {
+                        id: 'msg_welcome_2',
+                        room: 'homework',
+                        text: 'Здесь можно скидывать вопросы по домашке и делиться решениями из DeepSeek AI и Яндекс Алисы 📝',
+                        authorName: 'Админ',
+                        authorEmail: 'admin',
+                        isAdmin: true,
+                        createdAt: Date.now() - 1800000
+                    }
+                ];
             }
         } catch (e) {
             console.error('Error loading localStorage:', e);
@@ -1068,14 +1120,106 @@ class AppManager {
             });
         }
 
-        // Offline Bundle Download Buttons (Header & AI Chips Bar)
+        // Offline Bundle Download Buttons (Header, AI Chips Bar & Offline Modal)
         const dlOfflineBtn = document.getElementById('download-offline-btn');
         const chipDlOfflineBtn = document.getElementById('chip-download-offline-btn');
+        const offlineModal = document.getElementById('offline-modal');
+        const closeOfflineModal = document.getElementById('close-offline-modal');
+        const offlineDlHtmlBtn = document.getElementById('offline-dl-html-btn');
+        const offlineDlTxtBtn = document.getElementById('offline-dl-txt-btn');
+        const offlineCopyAllBtn = document.getElementById('offline-copy-all-btn');
+
+        const handleOfflineBtnClick = () => {
+            this.downloadOfflineBundle();
+            if (window.innerWidth <= 768) {
+                this.openOfflineModal();
+            }
+        };
+
         if (dlOfflineBtn) {
-            dlOfflineBtn.addEventListener('click', () => this.downloadOfflineBundle());
+            dlOfflineBtn.addEventListener('click', handleOfflineBtnClick);
         }
         if (chipDlOfflineBtn) {
-            chipDlOfflineBtn.addEventListener('click', () => this.downloadOfflineBundle());
+            chipDlOfflineBtn.addEventListener('click', handleOfflineBtnClick);
+        }
+        if (closeOfflineModal && offlineModal) {
+            closeOfflineModal.addEventListener('click', () => offlineModal.classList.remove('active'));
+        }
+        if (offlineModal) {
+            offlineModal.addEventListener('click', (e) => {
+                if (e.target === offlineModal) offlineModal.classList.remove('active');
+            });
+        }
+        if (offlineDlHtmlBtn) {
+            offlineDlHtmlBtn.addEventListener('click', () => this.downloadOfflineBundle());
+        }
+        if (offlineDlTxtBtn) {
+            offlineDlTxtBtn.addEventListener('click', () => this.downloadOfflineTextFile());
+        }
+        if (offlineCopyAllBtn) {
+            offlineCopyAllBtn.addEventListener('click', () => {
+                const txt = this.generateOfflineTextSummary();
+                this.copyText(txt).then(() => {
+                    this.showToast('📋 Всё расписание, ДЗ и ссылки ИИ скопированы в буфер обмена!', '📋');
+                    if (window.soundEngine) window.soundEngine.playSuccess();
+                });
+            });
+        }
+
+        // Registration-Only Class & AI Chats Modal Controls
+        const openClassChatBtn = document.getElementById('open-class-chat-btn');
+        const chipOpenChatsBtn = document.getElementById('chip-open-chats-btn');
+        const mobTopOpenChatBtn = document.getElementById('mob-top-open-chat-btn');
+        const classChatModal = document.getElementById('class-chat-modal');
+        const closeClassChatModal = document.getElementById('close-class-chat-modal');
+        const chatGateRegisterBtn = document.getElementById('chat-gate-register-btn');
+        const chatGateLoginBtn = document.getElementById('chat-gate-login-btn');
+        const classChatForm = document.getElementById('class-chat-form');
+
+        if (openClassChatBtn) {
+            openClassChatBtn.addEventListener('click', () => this.openClassChatModal());
+        }
+        if (chipOpenChatsBtn) {
+            chipOpenChatsBtn.addEventListener('click', () => this.openClassChatModal());
+        }
+        if (mobTopOpenChatBtn) {
+            mobTopOpenChatBtn.addEventListener('click', () => this.openClassChatModal());
+        }
+        if (closeClassChatModal && classChatModal) {
+            closeClassChatModal.addEventListener('click', () => classChatModal.classList.remove('active'));
+        }
+        if (classChatModal) {
+            classChatModal.addEventListener('click', (e) => {
+                if (e.target === classChatModal) classChatModal.classList.remove('active');
+            });
+        }
+        if (chatGateRegisterBtn) {
+            chatGateRegisterBtn.addEventListener('click', () => {
+                if (classChatModal) classChatModal.classList.remove('active');
+                this.openAuthModalWithTab('register');
+            });
+        }
+        if (chatGateLoginBtn) {
+            chatGateLoginBtn.addEventListener('click', () => {
+                if (classChatModal) classChatModal.classList.remove('active');
+                this.openAuthModalWithTab('login');
+            });
+        }
+        document.querySelectorAll('.chat-room-tab').forEach(tabBtn => {
+            tabBtn.addEventListener('click', () => {
+                this.switchChatRoom(tabBtn.dataset.chatRoom);
+            });
+        });
+        if (classChatForm) {
+            classChatForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const input = document.getElementById('class-chat-input');
+                if (!input) return;
+                const text = input.value.trim();
+                if (!text) return;
+                this.sendClassChatMessage(text);
+                input.value = '';
+            });
         }
 
         // Register Service Worker for PWA offline caching
@@ -1087,43 +1231,71 @@ class AppManager {
         setInterval(() => this.updateCurrentLessonHighlight(), 60000);
     }
 
+    switchMobileTab(tabName) {
+        const validTabs = ['schedule', 'homework', 'account'];
+        const target = validTabs.includes(tabName) ? tabName : 'schedule';
+
+        document.body.classList.remove('mob-tab-schedule', 'mob-tab-homework', 'mob-tab-account');
+        document.body.classList.add(`mob-tab-${target}`);
+
+        // Update Top Switcher Buttons
+        document.querySelectorAll('#mobile-top-switcher .mob-switch-btn[data-mob-tab]').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.mobTab === target);
+        });
+
+        // Update Bottom Nav Buttons
+        const navSchedule = document.getElementById('mob-nav-schedule');
+        const navHomework = document.getElementById('mob-nav-homework');
+        const navAccount = document.getElementById('mob-nav-account');
+
+        document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active'));
+        if (target === 'schedule' && navSchedule) navSchedule.classList.add('active');
+        if (target === 'homework' && navHomework) navHomework.classList.add('active');
+        if (target === 'account' && navAccount) navAccount.classList.add('active');
+
+        if (window.innerWidth <= 768) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
+
+    openOfflineModal() {
+        const offlineModal = document.getElementById('offline-modal');
+        const previewTa = document.getElementById('offline-preview-textarea');
+        if (previewTa) {
+            previewTa.value = this.generateOfflineTextSummary();
+        }
+        if (offlineModal) {
+            offlineModal.classList.add('active');
+        }
+    }
+
     setupMobileBottomNav() {
         const navSchedule = document.getElementById('mob-nav-schedule');
         const navHomework = document.getElementById('mob-nav-homework');
         const navOffline = document.getElementById('mob-nav-offline');
         const navBells = document.getElementById('mob-nav-bells');
-        const navCloud = document.getElementById('mob-nav-cloud');
-        const navAdmin = document.getElementById('mob-nav-admin');
-        const navAuth = document.getElementById('mob-nav-auth');
+        const navAccount = document.getElementById('mob-nav-account');
 
-        const setNavActive = (activeEl) => {
-            document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active'));
-            if (activeEl) activeEl.classList.add('active');
-        };
-
-        if (navSchedule) {
-            navSchedule.addEventListener('click', () => {
-                setNavActive(navSchedule);
-                const schedEl = document.getElementById('schedule-section');
-                if (schedEl) {
-                    schedEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
+        // Top Switcher Tabs on Mobile
+        document.querySelectorAll('#mobile-top-switcher .mob-switch-btn[data-mob-tab]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.switchMobileTab(btn.dataset.mobTab);
             });
+        });
+
+        // Bottom Nav Bar Tabs on Mobile
+        if (navSchedule) {
+            navSchedule.addEventListener('click', () => this.switchMobileTab('schedule'));
         }
 
         if (navHomework) {
-            navHomework.addEventListener('click', () => {
-                setNavActive(navHomework);
-                const hwEl = document.getElementById('homework-section');
-                if (hwEl) {
-                    hwEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            });
+            navHomework.addEventListener('click', () => this.switchMobileTab('homework'));
         }
 
         if (navOffline) {
             navOffline.addEventListener('click', () => {
                 this.downloadOfflineBundle();
+                this.openOfflineModal();
             });
         }
 
@@ -1137,29 +1309,92 @@ class AppManager {
             });
         }
 
-        if (navCloud) {
-            navCloud.addEventListener('click', () => {
+        if (navAccount) {
+            navAccount.addEventListener('click', () => this.switchMobileTab('account'));
+        }
+
+        // Mobile Account & Admin Hub Controls (3rd Mobile Tab)
+        const mobLoginBtn = document.getElementById('mob-hub-login-btn');
+        const mobLogoutBtn = document.getElementById('mob-hub-logout-btn');
+        const mobOpenAdminBtn = document.getElementById('mob-hub-open-admin-modal-btn');
+        const mobAddLessonBtn = document.getElementById('mob-hub-add-lesson-btn');
+        const mobAddHwBtn = document.getElementById('mob-hub-add-hw-btn');
+        const mobToggleEditBtns = document.getElementById('mob-toggle-card-edit-btns');
+        const mobDlHtmlBtn = document.getElementById('mob-hub-dl-html-btn');
+        const mobDlTxtBtn = document.getElementById('mob-hub-dl-txt-btn');
+        const mobCopyAllBtn = document.getElementById('mob-hub-copy-all-btn');
+        const mobCloudBtn = document.getElementById('mob-hub-cloud-btn');
+        const mobShareBtn = document.getElementById('mob-hub-share-btn');
+        const mobSoundBtn = document.getElementById('mob-hub-sound-btn');
+
+        if (mobLoginBtn) {
+            mobLoginBtn.addEventListener('click', () => {
+                const authModal = document.getElementById('auth-modal');
+                if (authModal) authModal.classList.add('active');
+            });
+        }
+        if (mobLogoutBtn) {
+            mobLogoutBtn.addEventListener('click', () => {
+                if (window.authManager) window.authManager.logout();
+            });
+        }
+        if (mobOpenAdminBtn) {
+            mobOpenAdminBtn.addEventListener('click', () => {
+                if (window.adminAbuse) window.adminAbuse.openModal();
+            });
+        }
+        if (mobAddLessonBtn) {
+            mobAddLessonBtn.addEventListener('click', () => {
+                this.openAddLessonModal(this.activeDay);
+            });
+        }
+        if (mobAddHwBtn) {
+            mobAddHwBtn.addEventListener('click', () => {
+                this.openAddHomeworkModal();
+            });
+        }
+        if (mobToggleEditBtns) {
+            mobToggleEditBtns.addEventListener('change', (e) => {
+                const enabled = e.target.checked;
+                document.body.classList.toggle('mob-show-card-edit-btns', enabled);
+                this.showToast(
+                    enabled ? 'Кнопки ✏️/🗑️ показаны на карточках уроков и ДЗ' : 'Кнопки ✏️/🗑️ скрыты для чистого вида',
+                    enabled ? '✏️' : '✨'
+                );
+            });
+        }
+        if (mobDlHtmlBtn) {
+            mobDlHtmlBtn.addEventListener('click', () => this.downloadOfflineBundle());
+        }
+        if (mobDlTxtBtn) {
+            mobDlTxtBtn.addEventListener('click', () => this.downloadOfflineTextFile());
+        }
+        if (mobCopyAllBtn) {
+            mobCopyAllBtn.addEventListener('click', () => {
+                const txt = this.generateOfflineTextSummary();
+                this.copyText(txt).then(() => {
+                    this.showToast('📋 Расписание, ДЗ и ссылки ИИ скопированы!', '📋');
+                    if (window.soundEngine) window.soundEngine.playSuccess();
+                });
+            });
+        }
+        if (mobCloudBtn) {
+            mobCloudBtn.addEventListener('click', () => {
                 this.openCloudModal();
                 if (window.soundEngine) window.soundEngine.playLaser();
             });
         }
-
-        if (navAdmin) {
-            navAdmin.addEventListener('click', () => {
-                if (window.adminAbuse) {
-                    window.adminAbuse.openModal();
-                }
-            });
+        if (mobShareBtn) {
+            mobShareBtn.addEventListener('click', () => this.generateShareLink());
         }
-
-        if (navAuth) {
-            navAuth.addEventListener('click', () => {
-                if (window.authManager && window.authManager.currentUser) {
-                    this.showToast(`Вы вошли как: ${window.authManager.currentUser.email}`, '👤');
-                } else {
-                    const authModal = document.getElementById('auth-modal');
-                    if (authModal) authModal.classList.add('active');
-                }
+        if (mobSoundBtn) {
+            mobSoundBtn.addEventListener('click', () => {
+                if (!window.soundEngine) return;
+                const isMuted = window.soundEngine.toggleMute();
+                mobSoundBtn.innerHTML = isMuted ? '🔇 Звук выключен (Нажмите, чтобы включить)' : '🔊 Звук включен';
+                const headerSoundBtn = document.getElementById('toggle-sound-btn');
+                if (headerSoundBtn) headerSoundBtn.innerHTML = isMuted ? '🔇 Без звука' : '🔊 Звук';
+                this.showToast(isMuted ? 'Звук отключен' : 'Звук включен', isMuted ? '🔇' : '🔊');
             });
         }
     }
@@ -1628,6 +1863,9 @@ class AppManager {
         });
 
         let html = '';
+        const isLogged = this.isUserLoggedIn();
+        const lockSuffix = isLogged ? '↗' : '🔒';
+
         filtered.forEach(hw => {
             const deepseekUrl = hw.deepseekLink || (hw.solution && hw.solution.deepseekLink) || '';
             const aliceUrl = hw.aliceLink || (hw.solution && hw.solution.aliceLink) || '';
@@ -1657,8 +1895,8 @@ class AppManager {
                                     <div class="solution-header">
                                         <span class="solution-source-badge">${this.escapeHtml(hw.solution.source || 'Решение')}</span>
                                         <div class="solution-links-chips">
-                                            ${deepseekUrl ? `<a href="${this.escapeHtml(deepseekUrl)}" target="_blank" rel="noopener noreferrer" class="solution-source-link deepseek-chip" title="Открыть чат решения в DeepSeek">🧠 Чат в DeepSeek ↗</a>` : ''}
-                                            ${aliceUrl ? `<a href="${this.escapeHtml(aliceUrl)}" target="_blank" rel="noopener noreferrer" class="solution-source-link alice-chip" title="Открыть диалог с Алисой">🟣 Чат в Алисе ↗</a>` : ''}
+                                            ${deepseekUrl ? `<a href="${this.escapeHtml(deepseekUrl)}" target="_blank" rel="noopener noreferrer" onclick="return app.handleProtectedChatLink(event, '${this.escapeQuotes(deepseekUrl)}', 'DeepSeek AI');" class="solution-source-link deepseek-chip" title="Открыть чат решения в DeepSeek (только с регистрации)">🧠 Чат в DeepSeek ${lockSuffix}</a>` : ''}
+                                            ${aliceUrl ? `<a href="${this.escapeHtml(aliceUrl)}" target="_blank" rel="noopener noreferrer" onclick="return app.handleProtectedChatLink(event, '${this.escapeQuotes(aliceUrl)}', 'Яндекс Алиса AI');" class="solution-source-link alice-chip" title="Открыть диалог с Алисой (только с регистрации)">🟣 Чат в Алисе ${lockSuffix}</a>` : ''}
                                             ${gdzUrl ? `<a href="${this.escapeHtml(gdzUrl)}" target="_blank" rel="noopener noreferrer" class="solution-source-link gdz-chip" title="Открыть страницу решения на ГДЗ">📚 Страница ГДЗ ↗</a>` : ''}
                                             ${(hw.solution.link && hw.solution.link !== deepseekUrl && hw.solution.link !== aliceUrl && hw.solution.link !== gdzUrl) ? `<a href="${this.escapeHtml(hw.solution.link)}" target="_blank" rel="noopener noreferrer" class="solution-source-link">🔗 Источник</a>` : ''}
                                         </div>
@@ -1672,22 +1910,22 @@ class AppManager {
                         <div class="hw-card-footer">
                             <div class="hw-ai-helpers">
                                 ${deepseekUrl ? `
-                                    <a href="${this.escapeHtml(deepseekUrl)}" target="_blank" rel="noopener noreferrer" class="mini-tool-btn active-link deepseek-btn" title="Перейти в готовый чат DeepSeek с решением">
-                                        🧠 Чат DeepSeek ↗
+                                    <a href="${this.escapeHtml(deepseekUrl)}" target="_blank" rel="noopener noreferrer" onclick="return app.handleProtectedChatLink(event, '${this.escapeQuotes(deepseekUrl)}', 'DeepSeek AI');" class="mini-tool-btn active-link deepseek-btn" title="Перейти в готовый чат DeepSeek с решением (только с регистрации)">
+                                        🧠 Чат DeepSeek ${lockSuffix}
                                     </a>
                                 ` : `
-                                    <button class="mini-tool-btn" onclick="app.openDeepSeekWithPrompt('${this.escapeQuotes(hw.subject)}', '${this.escapeQuotes(hw.text)}')" title="Сгенерировать промпт и открыть DeepSeek">
-                                        🧠 DeepSeek
+                                    <button class="mini-tool-btn" onclick="app.openDeepSeekWithPrompt('${this.escapeQuotes(hw.subject)}', '${this.escapeQuotes(hw.text)}')" title="Сгенерировать промпт и открыть чат DeepSeek (только с регистрации)">
+                                        🧠 DeepSeek ${isLogged ? '' : '🔒'}
                                     </button>
                                 `}
 
                                 ${aliceUrl ? `
-                                    <a href="${this.escapeHtml(aliceUrl)}" target="_blank" rel="noopener noreferrer" class="mini-tool-btn active-link alice-btn" title="Перейти в готовый диалог с Алисой">
-                                        🟣 Чат Алисы ↗
+                                    <a href="${this.escapeHtml(aliceUrl)}" target="_blank" rel="noopener noreferrer" onclick="return app.handleProtectedChatLink(event, '${this.escapeQuotes(aliceUrl)}', 'Яндекс Алиса AI');" class="mini-tool-btn active-link alice-btn" title="Перейти в готовый диалог с Алисой (только с регистрации)">
+                                        🟣 Чат Алисы ${lockSuffix}
                                     </a>
                                 ` : `
-                                    <button class="mini-tool-btn" onclick="app.openAliceWithPrompt('${this.escapeQuotes(hw.subject)}', '${this.escapeQuotes(hw.text)}')" title="Сгенерировать вопрос и открыть Алису">
-                                        🟣 Алиса
+                                    <button class="mini-tool-btn" onclick="app.openAliceWithPrompt('${this.escapeQuotes(hw.subject)}', '${this.escapeQuotes(hw.text)}')" title="Сгенерировать вопрос и открыть чат Алисы (только с регистрации)">
+                                        🟣 Алиса ${isLogged ? '' : '🔒'}
                                     </button>
                                 `}
 
@@ -1721,6 +1959,7 @@ class AppManager {
 
         container.innerHTML = html;
         this.updateStats();
+        this.renderClassChatAiHub();
     }
 
     openAddHomeworkModal() {
@@ -2003,8 +2242,48 @@ class AppManager {
         });
     }
 
-    // --- QUICK AI & GDZ HELPERS ---
+    // --- REGISTRATION-ONLY CHATS & AI HELPERS ---
+    openAuthModalWithTab(tab = 'register') {
+        const authModal = document.getElementById('auth-modal');
+        const loginTabBtn = document.getElementById('tab-login-btn');
+        const registerTabBtn = document.getElementById('tab-register-btn');
+        const loginForm = document.getElementById('auth-login-form');
+        const registerForm = document.getElementById('auth-register-form');
+
+        if (tab === 'register') {
+            if (registerTabBtn) registerTabBtn.classList.add('active');
+            if (loginTabBtn) loginTabBtn.classList.remove('active');
+            if (registerForm) registerForm.style.display = 'block';
+            if (loginForm) loginForm.style.display = 'none';
+        } else {
+            if (loginTabBtn) loginTabBtn.classList.add('active');
+            if (registerTabBtn) registerTabBtn.classList.remove('active');
+            if (loginForm) loginForm.style.display = 'block';
+            if (registerForm) registerForm.style.display = 'none';
+        }
+
+        if (authModal) authModal.classList.add('active');
+    }
+
+    requireAuthForChat(label = 'Чаты') {
+        if (this.isUserLoggedIn()) return true;
+        this.showToast(`🔒 ${label} доступны только после регистрации! Зарегистрируйтесь или войдите.`, '🔒');
+        if (window.soundEngine) window.soundEngine.playLaser();
+        this.openAuthModalWithTab('register');
+        return false;
+    }
+
+    handleProtectedChatLink(e, url, label = 'Чат ИИ') {
+        if (!this.isUserLoggedIn()) {
+            if (e && typeof e.preventDefault === 'function') e.preventDefault();
+            this.requireAuthForChat(label);
+            return false;
+        }
+        return true;
+    }
+
     openDeepSeekWithPrompt(subject, task) {
+        if (!this.requireAuthForChat('Чат DeepSeek AI')) return;
         const prompt = `Привет, DeepSeek! Помоги решить и подробно объясни решение для школьного задания по предмету "${subject}":\n\n${task}`;
         this.copyText(prompt).then(() => {
             this.showToast('Промпт скопирован! Открываем DeepSeek...', '🧠');
@@ -2015,6 +2294,7 @@ class AppManager {
     }
 
     openAliceWithPrompt(subject, task) {
+        if (!this.requireAuthForChat('Чат Яндекс Алиса AI')) return;
         const prompt = `Алиса, реши задание по предмету ${subject}: ${task}`;
         this.copyText(prompt).then(() => {
             this.showToast('Вопрос скопирован! Открываем Алису...', '🟣');
@@ -2025,6 +2305,7 @@ class AppManager {
     }
 
     askAIForSubject(subject) {
+        if (!this.requireAuthForChat('ИИ-чат по предмету')) return;
         const prompt = `Объясни мне тему и помоги с практическими заданиями по предмету "${subject}"`;
         this.copyText(prompt).then(() => {
             this.showToast(`Вопрос по предмету "${subject}" скопирован! Открываем DeepSeek...`, '🤖');
@@ -2037,6 +2318,189 @@ class AppManager {
     searchGDZ(subject) {
         const query = encodeURIComponent(`ГДЗ ${subject} учебник ответы`);
         window.open(`https://yandex.ru/search/?text=${query}`, '_blank');
+    }
+
+    // --- REGISTERED CLASS & AI CHATS MODAL ---
+    openClassChatModal(room = null) {
+        if (room) this.activeChatRoom = room;
+        this.syncClassChatAuthUI();
+        const modal = document.getElementById('class-chat-modal');
+        if (modal) modal.classList.add('active');
+        if (window.soundEngine) window.soundEngine.playLaser();
+    }
+
+    syncClassChatAuthUI() {
+        const isLogged = this.isUserLoggedIn();
+        const gateEl = document.getElementById('chat-auth-gate');
+        const unlockedEl = document.getElementById('chat-unlocked-view');
+        const lockPill = document.getElementById('header-chat-lock-pill');
+
+        if (lockPill) lockPill.innerText = isLogged ? '🟢' : '🔒';
+        if (gateEl) gateEl.style.display = isLogged ? 'none' : 'block';
+        if (unlockedEl) unlockedEl.style.display = isLogged ? 'block' : 'none';
+
+        if (isLogged) {
+            this.switchChatRoom(this.activeChatRoom || 'general');
+        }
+    }
+
+    switchChatRoom(room) {
+        this.activeChatRoom = room || 'general';
+        document.querySelectorAll('.chat-room-tab').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.chatRoom === this.activeChatRoom);
+        });
+
+        const liveBox = document.getElementById('chat-live-room-box');
+        const aiBox = document.getElementById('chat-ai-hub-box');
+
+        if (this.activeChatRoom === 'ai') {
+            if (liveBox) liveBox.style.display = 'none';
+            if (aiBox) aiBox.style.display = 'block';
+            this.renderClassChatAiHub();
+        } else {
+            if (liveBox) liveBox.style.display = 'block';
+            if (aiBox) aiBox.style.display = 'none';
+            this.renderClassChatMessages();
+        }
+    }
+
+    renderClassChatMessages() {
+        const container = document.getElementById('class-chat-messages');
+        if (!container) return;
+
+        const roomMsgs = (this.classChatMessages || []).filter(m => (m.room || 'general') === this.activeChatRoom);
+        if (roomMsgs.length === 0) {
+            container.innerHTML = `
+                <div style="margin: auto; text-align: center; color: var(--text-muted); padding: 24px;">
+                    <div style="font-size: 2rem; margin-bottom: 6px;">💬</div>
+                    <div>Сообщений пока нет. Напишите первым!</div>
+                </div>
+            `;
+            return;
+        }
+
+        const curEmail = (window.authManager && window.authManager.currentUser && window.authManager.currentUser.email) || '';
+        const isAdmin = this.isUserAdmin();
+
+        let html = '';
+        roomMsgs.forEach(msg => {
+            const isOwn = Boolean(curEmail && msg.authorEmail === curEmail);
+            const canDelete = isOwn || isAdmin;
+            const initial = (msg.authorName || 'У')[0].toUpperCase();
+            const timeStr = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '';
+
+            html += `
+                <div class="chat-msg-item ${isOwn ? 'own-msg' : ''}">
+                    <div class="chat-msg-avatar ${msg.isAdmin ? 'admin-av' : ''}">${this.escapeHtml(initial)}</div>
+                    <div class="chat-msg-body">
+                        <div class="chat-msg-top">
+                            <div class="chat-msg-author">
+                                <span>${this.escapeHtml(msg.authorName || 'Ученик')}</span>
+                                <span class="chat-msg-role ${msg.isAdmin ? 'admin' : ''}">${msg.isAdmin ? '👑 Админ' : '🎓 Ученик'}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span class="chat-msg-time">${this.escapeHtml(timeStr)}</span>
+                                ${canDelete ? `<button type="button" onclick="app.deleteClassChatMessage('${this.escapeQuotes(msg.id)}')" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.78rem;" title="Удалить сообщение">🗑️</button>` : ''}
+                            </div>
+                        </div>
+                        <div class="chat-msg-text">${this.escapeHtml(msg.text)}</div>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+        container.scrollTop = container.scrollHeight;
+    }
+
+    renderClassChatAiHub() {
+        const listEl = document.getElementById('chat-ai-hw-links-list');
+        if (!listEl) return;
+
+        if (!this.homework || this.homework.length === 0) {
+            listEl.innerHTML = `<div style="text-align:center;color:var(--text-muted);padding:16px;">Заданий с чатами пока нет.</div>`;
+            return;
+        }
+
+        let html = '';
+        this.homework.forEach(hw => {
+            const dsUrl = hw.deepseekLink || (hw.solution && hw.solution.deepseekLink) || '';
+            const alUrl = hw.aliceLink || (hw.solution && hw.solution.aliceLink) || '';
+            const gdzUrl = hw.gdzLink || (hw.solution && hw.solution.gdzLink) || '';
+
+            html += `
+                <div class="chat-msg-item" style="flex-direction: column; gap: 8px;">
+                    <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                        <strong style="color: #fff; font-size: 0.9rem;">📚 ${this.escapeHtml(hw.subject)}</strong>
+                        <span style="font-size: 0.74rem; color: var(--text-muted);">⏳ ${this.escapeHtml(hw.deadline || 'Скоро')}</span>
+                    </div>
+                    <div style="font-size: 0.82rem; color: var(--text-secondary);">${this.escapeHtml(hw.text)}</div>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        ${dsUrl ? `<a href="${this.escapeHtml(dsUrl)}" target="_blank" rel="noopener noreferrer" class="mini-tool-btn active-link deepseek-btn">🧠 Чат решения DeepSeek ↗</a>` : `<button type="button" class="mini-tool-btn" onclick="app.openDeepSeekWithPrompt('${this.escapeQuotes(hw.subject)}', '${this.escapeQuotes(hw.text)}')">🧠 Спросить DeepSeek</button>`}
+                        ${alUrl ? `<a href="${this.escapeHtml(alUrl)}" target="_blank" rel="noopener noreferrer" class="mini-tool-btn active-link alice-btn">🟣 Чат решения Алиса ↗</a>` : `<button type="button" class="mini-tool-btn" onclick="app.openAliceWithPrompt('${this.escapeQuotes(hw.subject)}', '${this.escapeQuotes(hw.text)}')">🟣 Спросить Алису</button>`}
+                        ${gdzUrl ? `<a href="${this.escapeHtml(gdzUrl)}" target="_blank" rel="noopener noreferrer" class="mini-tool-btn active-link gdz-btn">📚 ГДЗ ↗</a>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+
+        listEl.innerHTML = html;
+    }
+
+    sendClassChatMessage(text) {
+        if (!this.requireAuthForChat('Отправка сообщений в чат')) return;
+
+        const user = (window.authManager && window.authManager.currentUser) || {};
+        const authorName = user.displayName || (user.email ? user.email.split('@')[0] : 'Админ');
+        const authorEmail = user.email || 'admin';
+        const isAdmin = this.isUserAdmin();
+
+        const newMsg = {
+            id: 'cmsg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            room: this.activeChatRoom === 'ai' ? 'general' : (this.activeChatRoom || 'general'),
+            text,
+            authorName,
+            authorEmail,
+            isAdmin,
+            createdAt: Date.now()
+        };
+
+        this.classChatMessages.push(newMsg);
+        if (this.classChatMessages.length > 100) {
+            this.classChatMessages = this.classChatMessages.slice(-100);
+        }
+
+        try {
+            localStorage.setItem('curie_class_chat_msgs', JSON.stringify(this.classChatMessages));
+        } catch (e) {}
+
+        this.renderClassChatMessages();
+        if (window.soundEngine) window.soundEngine.playSuccess();
+
+        if (this.db) {
+            this.db.collection('curie_data').doc('class_chat').set({
+                messages: this.classChatMessages,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).catch(err => {
+                console.warn('Could not sync class chat to Firestore:', err);
+            });
+        }
+    }
+
+    deleteClassChatMessage(msgId) {
+        if (!this.isUserLoggedIn()) return;
+        this.classChatMessages = (this.classChatMessages || []).filter(m => m.id !== msgId);
+        try {
+            localStorage.setItem('curie_class_chat_msgs', JSON.stringify(this.classChatMessages));
+        } catch (e) {}
+        this.renderClassChatMessages();
+
+        if (this.db) {
+            this.db.collection('curie_data').doc('class_chat').set({
+                messages: this.classChatMessages,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).catch(() => {});
+        }
     }
 
     // --- LESSON CRUD ---
@@ -2736,11 +3200,81 @@ class AppManager {
         document.body.appendChild(a);
         a.click();
         a.remove();
-        URL.revokeObjectURL(url);
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
 
         this.showToast('📲 Офлайн-версия (Расписание + ДЗ + Чаты DeepSeek/Алиса) скачана на устройство!', '📲');
         if (window.soundEngine) window.soundEngine.playSuccess();
         if (window.effectsManager) window.effectsManager.confettiBurst();
+    }
+
+    generateOfflineTextSummary() {
+        const lines = [];
+        const nowStr = new Date().toLocaleString('ru-RU', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        lines.push(`🗓️ CURIESCHEDULE — РАСПИСАНИЕ И ДЗ (Офлайн от ${nowStr})`);
+        lines.push(`================================================`);
+        lines.push(``);
+        lines.push(`📅 РАСПИСАНИЕ УРОКОВ:`);
+
+        ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'].forEach(d => {
+            const list = (this.schedule && this.schedule[d]) || [];
+            if (!list.length) return;
+            lines.push(`\n▶ ${this.dayNames[d].toUpperCase()}:`);
+            list.forEach(l => {
+                lines.push(`  ${l.num}. ${l.subject} (${l.time}) — Каб: ${l.room || '—'}`);
+            });
+        });
+
+        lines.push(`\n================================================`);
+        lines.push(`📝 ДОМАШНИЕ ЗАДАНИЯ И ЧАТЫ РЕШЕНИЙ (DeepSeek / Алиса / ГДЗ):`);
+
+        if (!this.homework || !this.homework.length) {
+            lines.push(`  🎉 Домашних заданий нет!`);
+        } else {
+            this.homework.forEach((h, idx) => {
+                lines.push(`\n${idx + 1}) [${h.subject}] (Срок: ${h.deadline || 'Скоро'}${h.urgent ? ', СРОЧНО!' : ''})`);
+                lines.push(`   Задание: ${h.text}`);
+                if (h.solution && h.solution.text) {
+                    lines.push(`   💡 Готовый ответ: ${h.solution.text}`);
+                }
+                const dsLink = h.deepseekLink || (h.solution && h.solution.deepseekLink) || '';
+                const alLink = h.aliceLink || (h.solution && h.solution.aliceLink) || '';
+                const gdzLink = h.gdzLink || (h.solution && h.solution.gdzLink) || '';
+                if (dsLink) lines.push(`   🧠 Чат DeepSeek AI: ${dsLink}`);
+                if (alLink) lines.push(`   🟣 Чат Яндекс Алиса AI: ${alLink}`);
+                if (gdzLink) lines.push(`   📚 ГДЗ: ${gdzLink}`);
+            });
+        }
+
+        lines.push(`\n================================================`);
+        lines.push(`🤖 БЫСТРЫЕ ССЫЛКИ НА ЧАТЫ ИИ:`);
+        lines.push(`- DeepSeek AI: https://chat.deepseek.com`);
+        lines.push(`- Яндекс Алиса AI: https://a.ya.ru`);
+        lines.push(`- ГДЗ.ру: https://gdz.ru`);
+
+        return lines.join('\n');
+    }
+
+    downloadOfflineTextFile() {
+        const text = this.generateOfflineTextSummary();
+        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Raspisanie_DZ_${new Date().toISOString().slice(0, 10)}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+
+        this.showToast('📄 Текстовая шпаргалка (.TXT) скачана на телефон!', '📄');
+        if (window.soundEngine) window.soundEngine.playSuccess();
     }
 
     // --- EXPORT & SHARE ---

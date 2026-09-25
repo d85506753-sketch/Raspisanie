@@ -103,14 +103,34 @@ class AuthManager {
                 addHwBtn.style.display = this.isAdmin ? 'inline-flex' : 'none';
             }
 
-            // Reveal admin buttons and mobile nav tabs if admin
-            const mobNavAdmin = document.getElementById('mob-nav-admin');
-            const mobNavAuth = document.getElementById('mob-nav-auth');
-            if (mobNavAdmin) mobNavAdmin.style.display = this.isAdmin ? 'flex' : 'none';
-            if (mobNavAuth) {
-                mobNavAuth.style.display = this.isAdmin ? 'none' : 'flex';
-                const label = mobNavAuth.querySelector('.mob-nav-label');
-                if (label) label.innerText = user ? 'Профиль' : 'Вход';
+            // Sync Mobile Hub (3rd tab: Account & Admin Panel)
+            const mobGuest = document.getElementById('mob-hub-guest');
+            const mobUser = document.getElementById('mob-hub-user');
+            const mobAvatar = document.getElementById('mob-hub-avatar');
+            const mobName = document.getElementById('mob-hub-name');
+            const mobEmail = document.getElementById('mob-hub-email');
+            const mobRole = document.getElementById('mob-hub-role');
+            const mobAdminBox = document.getElementById('mob-hub-admin-box');
+            const mobNavAccountIcon = document.getElementById('mob-nav-account-icon');
+            const mobNavAccountLabel = document.getElementById('mob-nav-account-label');
+
+            if (mobGuest) mobGuest.style.display = 'none';
+            if (mobUser) mobUser.style.display = 'flex';
+            if (mobAvatar) mobAvatar.innerText = (user.displayName || user.email || 'U')[0].toUpperCase();
+            if (mobName) mobName.innerText = user.displayName || (user.email ? user.email.split('@')[0] : 'Пользователь');
+            if (mobEmail) mobEmail.innerText = user.email || '';
+            if (mobRole) {
+                mobRole.innerText = this.isAdmin ? '👑 Админ' : '🎓 Ученик';
+                mobRole.className = `role-badge ${this.isAdmin ? 'admin-role' : 'student-role'}`;
+            }
+            if (mobAdminBox) {
+                mobAdminBox.style.display = this.isAdmin ? 'block' : 'none';
+            }
+            if (mobNavAccountIcon) {
+                mobNavAccountIcon.innerText = this.isAdmin ? '👑' : '👤';
+            }
+            if (mobNavAccountLabel) {
+                mobNavAccountLabel.innerText = this.isAdmin ? 'Админ' : 'Профиль';
             }
 
             // Auto-unlock admin abuse panel
@@ -127,9 +147,15 @@ class AuthManager {
                 }).catch(() => {});
             }
 
+            const chatLockPill = document.getElementById('header-chat-lock-pill');
+            if (chatLockPill) chatLockPill.innerText = '🟢';
+
             if (window.app) {
                 window.app.renderSchedule();
                 window.app.renderHomework();
+                if (typeof window.app.syncClassChatAuthUI === 'function') {
+                    window.app.syncClassChatAuthUI();
+                }
             }
         } else {
             this.isAdmin = false;
@@ -142,14 +168,20 @@ class AuthManager {
             if (adminBadge) adminBadge.style.display = 'none';
             if (addHwBtn) addHwBtn.style.display = 'none';
 
-            const mobNavAdmin = document.getElementById('mob-nav-admin');
-            const mobNavAuth = document.getElementById('mob-nav-auth');
-            if (mobNavAdmin) mobNavAdmin.style.display = 'none';
-            if (mobNavAuth) {
-                mobNavAuth.style.display = 'flex';
-                const label = mobNavAuth.querySelector('.mob-nav-label');
-                if (label) label.innerText = 'Вход';
-            }
+            // Sync Mobile Hub for Guest
+            const mobGuest = document.getElementById('mob-hub-guest');
+            const mobUser = document.getElementById('mob-hub-user');
+            const mobAdminBox = document.getElementById('mob-hub-admin-box');
+            const mobNavAccountIcon = document.getElementById('mob-nav-account-icon');
+            const mobNavAccountLabel = document.getElementById('mob-nav-account-label');
+            const chatLockPill = document.getElementById('header-chat-lock-pill');
+
+            if (mobGuest) mobGuest.style.display = 'flex';
+            if (mobUser) mobUser.style.display = 'none';
+            if (mobAdminBox) mobAdminBox.style.display = 'none';
+            if (mobNavAccountIcon) mobNavAccountIcon.innerText = '👤';
+            if (mobNavAccountLabel) mobNavAccountLabel.innerText = 'Кабинет';
+            if (chatLockPill) chatLockPill.innerText = '🔒';
 
             if (window.adminAbuse) {
                 window.adminAbuse.isAuthenticated = false;
@@ -158,6 +190,9 @@ class AuthManager {
             if (window.app) {
                 window.app.renderSchedule();
                 window.app.renderHomework();
+                if (typeof window.app.syncClassChatAuthUI === 'function') {
+                    window.app.syncClassChatAuthUI();
+                }
             }
         }
     }

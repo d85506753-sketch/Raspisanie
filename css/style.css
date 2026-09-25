@@ -1548,8 +1548,10 @@ body.disco-party-mode {
    MOBILE FIRST RESPONSIVE EXPERIENCE & PWA OPTIMIZATIONS
    ========================================================================== */
 
-/* 1. Mobile Bottom Navigation Bar (Hidden on desktop) */
-.mobile-bottom-nav {
+/* 1. Mobile Navigation & Account Tab (Hidden on desktop > 768px) */
+.mobile-bottom-nav,
+.mobile-top-switcher,
+.mobile-account-section {
     display: none;
 }
 
@@ -1565,56 +1567,153 @@ body.disco-party-mode {
         max-width: 100%;
     }
 
-    /* Header Compact on Mobile */
+    /* Clean 1-line Header on Mobile: Hide Account & Admin clutter (moved to Кабинет tab!) */
     .site-header {
         padding: 10px 12px;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
         border-radius: 14px;
         flex-direction: row;
         justify-content: space-between;
         align-items: center;
+        flex-wrap: nowrap;
         gap: 8px;
     }
 
     .logo-wrapper {
         gap: 8px;
+        min-width: 0;
     }
 
     .logo-icon {
-        font-size: 1.5rem;
+        font-size: 1.45rem;
     }
 
     .brand-title {
-        font-size: 1.15rem;
+        font-size: 1.12rem;
         line-height: 1.1;
     }
 
     .brand-subtitle {
-        display: none; /* Keep header compact on mobile */
+        display: none;
+    }
+
+    /* Hide desktop header buttons on mobile — they live in the "Кабинет" & "Чаты" tabs! */
+    #open-class-chat-btn,
+    #toggle-sound-btn,
+    #share-link-btn,
+    #cloud-sync-btn,
+    #header-auth-btn,
+    #header-user-badge,
+    #open-admin-btn {
+        display: none !important;
     }
 
     .header-controls {
         gap: 6px;
+        flex-shrink: 0;
     }
 
-    .header-controls .cool-btn {
-        padding: 5px 8px;
-        font-size: 0.78rem;
+    .header-controls #download-offline-btn {
+        padding: 6px 11px;
+        font-size: 0.8rem;
+        border-radius: 8px;
+        white-space: nowrap;
     }
 
-    .cloud-badge-btn {
-        padding: 5px 8px;
-        font-size: 0.75rem;
+    /* Hide inline Admin buttons in main mobile view unless toggle is enabled in Кабинет tab */
+    #quick-add-lesson-btn,
+    #admin-badge-indicator,
+    #add-hw-btn {
+        display: none !important;
+    }
+
+    body:not(.mob-show-card-edit-btns) .edit-lesson-btn,
+    body:not(.mob-show-card-edit-btns) .delete-lesson-btn,
+    body:not(.mob-show-card-edit-btns) .admin-upload-btn,
+    body:not(.mob-show-card-edit-btns) .edit-hw-btn,
+    body:not(.mob-show-card-edit-btns) .delete-hw-btn {
+        display: none !important;
+    }
+
+    .floating-taco-mascot {
+        display: none !important;
+    }
+
+    /* Mobile Top Segmented Switcher (Уроки | Домашка | Аккаунт/Админ) */
+    .mobile-top-switcher {
+        display: flex;
+        gap: 6px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        padding: 5px;
+        border-radius: 12px;
+        margin-bottom: 12px;
+    }
+
+    .mob-switch-btn {
+        flex: 1;
+        padding: 8px 6px;
+        border: none;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-align: center;
+        white-space: nowrap;
+        transition: all 0.18s ease;
+    }
+
+    .mob-switch-btn.active {
+        background: var(--accent-blue);
+        color: #ffffff;
+        box-shadow: 0 2px 8px rgba(47, 129, 247, 0.3);
+    }
+
+    /* Mobile Tab Visibility Switching */
+    body.mob-tab-schedule #homework-section,
+    body.mob-tab-schedule #mobile-account-section {
+        display: none !important;
+    }
+
+    body.mob-tab-homework #days-nav-wrapper,
+    body.mob-tab-homework #schedule-section,
+    body.mob-tab-homework #mobile-account-section {
+        display: none !important;
+    }
+
+    body.mob-tab-account #days-nav-wrapper,
+    body.mob-tab-account #schedule-section,
+    body.mob-tab-account #homework-section {
+        display: none !important;
+    }
+
+    body.mob-tab-account #mobile-account-section {
+        display: block !important;
+    }
+
+    .mob-hub-card {
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 12px;
+    }
+
+    .mob-hub-admin-card {
+        border-color: rgba(163, 113, 247, 0.45);
+        background: rgba(137, 87, 229, 0.06);
     }
 
     /* AI & GDZ Quick Launch Chips */
     .ai-chips-section {
-        margin-bottom: 12px;
-        padding-bottom: 2px;
+        margin-bottom: 10px;
+        padding: 8px 10px;
     }
 
     .ai-chips-label {
-        font-size: 0.76rem;
+        display: none;
     }
 
     .ai-chips-list {
@@ -1622,7 +1721,8 @@ body.disco-party-mode {
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
         flex-wrap: nowrap;
-        padding-bottom: 4px;
+        width: 100%;
+        padding-bottom: 2px;
     }
 
     .ai-chips-list::-webkit-scrollbar {
@@ -1638,7 +1738,7 @@ body.disco-party-mode {
 
     /* Days Navigation Touch Carousel */
     .days-nav-wrapper {
-        margin-bottom: 14px;
+        margin-bottom: 12px;
         scroll-snap-type: x mandatory;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
@@ -1654,7 +1754,7 @@ body.disco-party-mode {
     }
 
     .day-btn {
-        min-width: 64px;
+        min-width: 62px;
         padding: 7px 8px;
         border-radius: 12px;
         scroll-snap-align: start;
@@ -1704,15 +1804,21 @@ body.disco-party-mode {
     }
 
     .lesson-card {
-        padding: 11px 10px;
+        padding: 11px 12px;
         gap: 10px;
         border-radius: 12px;
+        flex-wrap: wrap;
     }
 
     .lesson-number-badge {
         min-width: 28px;
         height: 28px;
         font-size: 0.9rem;
+    }
+
+    .lesson-content {
+        flex: 1 1 calc(100% - 130px);
+        min-width: 140px;
     }
 
     .lesson-header-row {
@@ -1747,10 +1853,9 @@ body.disco-party-mode {
     }
 
     .lesson-actions .icon-btn {
-        padding: 6px 10px;
-        font-size: 0.9rem;
-        min-width: 36px;
-        min-height: 36px;
+        padding: 5px 9px;
+        font-size: 0.8rem;
+        min-height: 32px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -1978,4 +2083,221 @@ body.disco-party-mode {
     background: rgba(46, 160, 67, 0.28) !important;
     transform: translateY(-1px);
 }
+
+/* ==========================================================================
+   CLASS & AI CHATS MODAL (REGISTRATION-ONLY)
+   ========================================================================== */
+.chat-header-btn {
+    border-color: rgba(56, 139, 253, 0.45) !important;
+    background: rgba(56, 139, 253, 0.12) !important;
+    color: #58a6ff !important;
+    font-weight: 700 !important;
+}
+
+.chat-header-btn:hover {
+    background: rgba(56, 139, 253, 0.22) !important;
+}
+
+.chat-reg-pill {
+    font-size: 0.72rem;
+    margin-left: 2px;
+}
+
+.chip-class-chat {
+    cursor: pointer;
+    border-color: rgba(56, 139, 253, 0.5) !important;
+    background: rgba(56, 139, 253, 0.15) !important;
+    color: #58a6ff !important;
+    font-family: inherit;
+    font-weight: 700 !important;
+}
+
+.chip-class-chat:hover {
+    background: rgba(56, 139, 253, 0.28) !important;
+    transform: translateY(-1px);
+}
+
+.chat-auth-gate {
+    text-align: center;
+    padding: 28px 18px 18px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed var(--border-color);
+    border-radius: 14px;
+}
+
+.chat-gate-icon {
+    font-size: 2.8rem;
+    margin-bottom: 10px;
+}
+
+.chat-gate-title {
+    font-size: 1.12rem;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 8px;
+}
+
+.chat-gate-desc {
+    font-size: 0.86rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    max-width: 440px;
+    margin: 0 auto 18px;
+}
+
+.chat-gate-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.chat-rooms-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+    background: var(--bg-input);
+    padding: 4px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    overflow-x: auto;
+}
+
+.chat-room-tab {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 8px 10px;
+    border-radius: 7px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+
+.chat-room-tab.active {
+    background: var(--accent);
+    color: #fff;
+}
+
+.class-chat-messages {
+    height: 320px;
+    overflow-y: auto;
+    background: #090d13;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.chat-msg-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 11px;
+    padding: 9px 11px;
+}
+
+.chat-msg-item.own-msg {
+    border-color: rgba(56, 139, 253, 0.45);
+    background: rgba(56, 139, 253, 0.08);
+}
+
+.chat-msg-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.chat-msg-avatar.admin-av {
+    background: linear-gradient(135deg, #8957e5, #d2a8ff);
+}
+
+.chat-msg-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.chat-msg-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin-bottom: 3px;
+    flex-wrap: wrap;
+}
+
+.chat-msg-author {
+    font-weight: 700;
+    font-size: 0.83rem;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.chat-msg-role {
+    font-size: 0.68rem;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--text-muted);
+}
+
+.chat-msg-role.admin {
+    background: rgba(163, 113, 247, 0.2);
+    color: #d2a8ff;
+}
+
+.chat-msg-time {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.chat-msg-text {
+    font-size: 0.88rem;
+    color: var(--text-primary);
+    line-height: 1.4;
+    word-break: break-word;
+    white-space: pre-wrap;
+}
+
+.class-chat-form {
+    display: flex;
+    gap: 8px;
+}
+
+.class-chat-form .form-input {
+    flex: 1;
+}
+
+.ai-hub-quick-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.chat-ai-hw-links-list {
+    max-height: 280px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 

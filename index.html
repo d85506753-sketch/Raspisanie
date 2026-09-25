@@ -30,6 +30,9 @@
             </div>
 
             <div class="header-controls">
+                <button class="cool-btn chat-header-btn" id="open-class-chat-btn" title="Открыть чаты класса и ИИ (доступно после регистрации)">
+                    💬 Чаты <span class="chat-reg-pill" id="header-chat-lock-pill">🔒</span>
+                </button>
                 <button class="cool-btn primary offline-download-btn" id="download-offline-btn" title="Скачать автономный файл с расписанием, ДЗ и чатами DeepSeek / Алиса на телефон">
                     📲 Скачать офлайн
                 </button>
@@ -68,12 +71,15 @@
 
         <!-- AI & GDZ Quick Launch Chips (Minimalist & Compact) -->
         <section class="ai-chips-section">
-            <span class="ai-chips-label">Помощники в учёбе:</span>
+            <span class="ai-chips-label">Помощники и Чаты:</span>
             <div class="ai-chips-list">
-                <a href="https://chat.deepseek.com" target="_blank" rel="noopener noreferrer" class="ai-chip chip-deepseek" title="DeepSeek AI — Решение сложных задач и сочинений">
+                <button type="button" id="chip-open-chats-btn" class="ai-chip chip-class-chat" title="Открыть чат класса и чаты решений (только с регистрации)">
+                    <span class="chip-icon">💬</span> Чаты класса & ИИ
+                </button>
+                <a href="https://chat.deepseek.com" target="_blank" rel="noopener noreferrer" onclick="return window.app ? window.app.handleProtectedChatLink(event, 'https://chat.deepseek.com', 'DeepSeek AI') : true;" class="ai-chip chip-deepseek" title="DeepSeek AI — Решение сложных задач и сочинений (доступно после регистрации)">
                     <span class="chip-icon">🧠</span> DeepSeek AI
                 </a>
-                <a href="https://a.ya.ru" target="_blank" rel="noopener noreferrer" class="ai-chip chip-alice" title="Яндекс Алиса AI — Быстрые ответы и поиск">
+                <a href="https://a.ya.ru" target="_blank" rel="noopener noreferrer" onclick="return window.app ? window.app.handleProtectedChatLink(event, 'https://a.ya.ru', 'Яндекс Алиса AI') : true;" class="ai-chip chip-alice" title="Яндекс Алиса AI — Быстрые ответы и поиск (доступно после регистрации)">
                     <span class="chip-icon">🟣</span> Яндекс Алиса
                 </a>
                 <a href="https://gdz.ru" target="_blank" rel="noopener noreferrer" class="ai-chip chip-gdz" title="ГДЗ.ру — Готовые домашние задания">
@@ -88,8 +94,24 @@
             </div>
         </section>
 
+        <!-- Mobile Top View Switcher (Instant Tab Switch on Phones) -->
+        <div class="mobile-top-switcher" id="mobile-top-switcher">
+            <button type="button" class="mob-switch-btn active" data-mob-tab="schedule" id="mob-top-tab-schedule">
+                🗓️ Уроки
+            </button>
+            <button type="button" class="mob-switch-btn" data-mob-tab="homework" id="mob-top-tab-homework">
+                📝 Домашка
+            </button>
+            <button type="button" class="mob-switch-btn" id="mob-top-open-chat-btn">
+                💬 Чаты
+            </button>
+            <button type="button" class="mob-switch-btn" data-mob-tab="account" id="mob-top-tab-account">
+                👤 Кабинет
+            </button>
+        </div>
+
         <!-- Days Navigation Tabs -->
-        <nav class="days-nav-wrapper">
+        <nav class="days-nav-wrapper" id="days-nav-wrapper">
             <div class="days-nav">
                 <button class="day-btn active" data-day="mon">
                     <span class="day-short">ПН</span>
@@ -174,6 +196,114 @@
                 <!-- Homework Cards List -->
                 <div id="homework-list" class="hw-list">
                     <!-- Homework cards rendered dynamically by app.js -->
+                </div>
+            </section>
+
+            <!-- Mobile-Only 3rd Tab: Account, Offline Download & Admin Panel -->
+            <section class="section-card mobile-account-section" id="mobile-account-section">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">👤 Личный кабинет и Настройки</h2>
+                        <span class="section-subtitle">Аккаунт, офлайн-скачивание и управление</span>
+                    </div>
+                </div>
+
+                <!-- 1. User Account Card on Mobile -->
+                <div class="mob-hub-card">
+                    <div id="mob-hub-guest" style="display: flex; flex-direction: column; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="user-avatar" style="width: 40px; height: 40px; font-size: 1.1rem; background: var(--bg-subtle); border: 1px solid var(--border-color);">👤</div>
+                            <div>
+                                <div style="font-weight: 700; font-size: 0.95rem;">Гостевой режим</div>
+                                <div style="font-size: 0.78rem; color: var(--text-muted);">Войдите в аккаунт для синхронизации и прав админа</div>
+                            </div>
+                        </div>
+                        <button type="button" class="cool-btn primary" id="mob-hub-login-btn" style="width: 100%; justify-content: center; padding: 10px;">
+                            🔐 Войти в аккаунт / Регистрация
+                        </button>
+                    </div>
+
+                    <div id="mob-hub-user" style="display: none; flex-direction: column; gap: 12px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                                <div id="mob-hub-avatar" class="user-avatar" style="width: 42px; height: 42px; font-size: 1.1rem; flex-shrink: 0;">U</div>
+                                <div style="min-width: 0;">
+                                    <div id="mob-hub-name" style="font-weight: 700; font-size: 0.96rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">User</div>
+                                    <div id="mob-hub-email" style="font-size: 0.76rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
+                                </div>
+                            </div>
+                            <span id="mob-hub-role" class="role-badge student-role" style="padding: 4px 10px; border-radius: 999px; background: var(--bg-subtle); border: 1px solid var(--border-color); flex-shrink: 0;">🎓 Ученик</span>
+                        </div>
+                        <button type="button" class="cool-btn" id="mob-hub-logout-btn" style="width: 100%; justify-content: center; color: var(--danger); border-color: rgba(248, 81, 73, 0.35);">
+                            🚪 Выйти из аккаунта
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. Admin Panel Block on Mobile (Visible ONLY when Admin is logged in) -->
+                <div class="mob-hub-card mob-hub-admin-card" id="mob-hub-admin-box" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h4 style="font-size: 0.95rem; font-weight: 700; color: #d2a8ff; margin: 0;">👑 Управление сайтом (Админ)</h4>
+                        <span class="admin-pill">Доступ открыт</span>
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">
+                        Все админ-кнопки собраны здесь, чтобы не мешать просмотру расписания на телефоне:
+                    </p>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <button type="button" class="cool-btn primary" id="mob-hub-open-admin-modal-btn" style="width: 100%; justify-content: center; padding: 11px; background: #8957e5; border-color: #a371f7;">
+                            ⚙️ Открыть полную Панель Администратора
+                        </button>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <button type="button" class="cool-btn" id="mob-hub-add-lesson-btn" style="justify-content: center; padding: 10px;">
+                                ➕ Добавить урок
+                            </button>
+                            <button type="button" class="cool-btn" id="mob-hub-add-hw-btn" style="justify-content: center; padding: 10px;">
+                                📝 Добавить ДЗ
+                            </button>
+                        </div>
+                        <div class="toggle-item" style="margin-top: 4px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 12px;">
+                            <span style="font-size: 0.82rem;">✏️ Кнопки ред./удаления (✏️/🗑️) в уроках и ДЗ</span>
+                            <label class="switch">
+                                <input type="checkbox" id="mob-toggle-card-edit-btns">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Offline Download Block on Mobile -->
+                <div class="mob-hub-card">
+                    <h4 style="font-size: 0.95rem; font-weight: 700; color: #3fb950; margin-bottom: 6px;">📲 Скачать офлайн-версию на телефон</h4>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;">
+                        Расписание, ДЗ, ответы и ссылки на чаты DeepSeek AI и Яндекс Алиса без интернета:
+                    </p>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <button type="button" class="cool-btn primary" id="mob-hub-dl-html-btn" style="width: 100%; justify-content: center; padding: 11px;">
+                            📲 Скачать офлайн-файл (.HTML)
+                        </button>
+                        <button type="button" class="cool-btn" id="mob-hub-dl-txt-btn" style="width: 100%; justify-content: center; padding: 10px; color: #3fb950; border-color: rgba(46, 160, 67, 0.4);">
+                            📄 Скачать текстовую шпаргалку (.TXT)
+                        </button>
+                        <button type="button" class="cool-btn" id="mob-hub-copy-all-btn" style="width: 100%; justify-content: center; padding: 10px;">
+                            📋 Скопировать всё (для Избранного Telegram)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 4. Other Tools (Cloud, Share, Sound) -->
+                <div class="mob-hub-card">
+                    <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 10px;">🛠️ Инструменты</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <button type="button" class="cool-btn" id="mob-hub-cloud-btn" style="justify-content: center; padding: 10px;">
+                            ☁️ Облако Базы
+                        </button>
+                        <button type="button" class="cool-btn" id="mob-hub-share-btn" style="justify-content: center; padding: 10px;">
+                            🔗 Поделиться
+                        </button>
+                        <button type="button" class="cool-btn" id="mob-hub-sound-btn" style="justify-content: center; padding: 10px; grid-column: 1 / -1;">
+                            🔊 Включить / Выключить звук
+                        </button>
+                    </div>
                 </div>
             </section>
         </main>
@@ -346,6 +476,9 @@
                         <pre style="background: #0d1117; padding: 10px; border-radius: 6px; font-size: 0.78rem; overflow-x: auto; color: #58a6ff; border: 1px solid #30363d;" id="firestore-rules-snippet">rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    match /curie_data/class_chat {
+      allow read, write: if request.auth != null;
+    }
     match /{document=**} {
       allow read: if true;
       allow write: if request.auth != null && (
@@ -367,6 +500,116 @@ service cloud.firestore {
                     <button class="cool-btn" id="cloud-modal-pull-btn" style="flex: 1; justify-content: center;">
                         🔄 Загрузить из облака
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Class & AI Chats Modal (Available ONLY to Registered Users) -->
+    <div id="class-chat-modal" class="modal-backdrop">
+        <div class="modal-window class-chat-window" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 style="font-weight: 700; font-size: 1.18rem; display: flex; align-items: center; gap: 8px;">
+                    <span>💬</span> Чаты класса & Решения ИИ
+                </h3>
+                <button class="modal-close-btn" id="close-class-chat-modal">&times;</button>
+            </div>
+
+            <!-- LOCK SCREEN FOR GUESTS (Not Registered / Not Logged In) -->
+            <div id="chat-auth-gate" class="chat-auth-gate">
+                <div class="chat-gate-icon">🔒</div>
+                <h4 class="chat-gate-title">Чаты доступны только с регистрации</h4>
+                <p class="chat-gate-desc">
+                    Зарегистрируйтесь или войдите в аккаунт (занимает 10 секунд), чтобы писать в общий чат класса, обсуждать домашку и открывать чаты решений <b>DeepSeek AI</b> и <b>Яндекс Алиса AI</b>.
+                </p>
+                <div class="chat-gate-actions">
+                    <button type="button" class="cool-btn primary" id="chat-gate-register-btn" style="flex: 1; justify-content: center; padding: 12px 16px; font-size: 0.94rem;">
+                        📝 Зарегистрироваться
+                    </button>
+                    <button type="button" class="cool-btn" id="chat-gate-login-btn" style="flex: 1; justify-content: center; padding: 12px 16px; font-size: 0.94rem;">
+                        🔐 Войти в аккаунт
+                    </button>
+                </div>
+            </div>
+
+            <!-- UNLOCKED CHAT VIEW (Visible ONLY when Logged In / Registered) -->
+            <div id="chat-unlocked-view" style="display: none;">
+                <!-- Room / Channel Switcher -->
+                <div class="chat-rooms-tabs">
+                    <button type="button" class="chat-room-tab active" data-chat-room="general">
+                        💬 Общий чат
+                    </button>
+                    <button type="button" class="chat-room-tab" data-chat-room="homework">
+                        📝 Помощь с ДЗ
+                    </button>
+                    <button type="button" class="chat-room-tab" data-chat-room="ai">
+                        🤖 Чаты ИИ (DeepSeek / Алиса)
+                    </button>
+                </div>
+
+                <!-- Live Messages Container (General & Homework rooms) -->
+                <div id="chat-live-room-box">
+                    <div id="class-chat-messages" class="class-chat-messages">
+                        <!-- Messages rendered dynamically -->
+                    </div>
+
+                    <form id="class-chat-form" class="class-chat-form">
+                        <input type="text" id="class-chat-input" class="form-input" placeholder="Написать сообщение в чат..." maxlength="500" autocomplete="off" required>
+                        <button type="submit" class="cool-btn primary" id="class-chat-send-btn">
+                            Отправить ➤
+                        </button>
+                    </form>
+                </div>
+
+                <!-- AI Chats Hub Container (DeepSeek & Alice links from Homework) -->
+                <div id="chat-ai-hub-box" style="display: none;">
+                    <div class="ai-hub-quick-row">
+                        <a href="https://chat.deepseek.com" target="_blank" rel="noopener noreferrer" class="cool-btn primary" style="flex: 1; justify-content: center; text-decoration: none; background: #1f6feb;">
+                            🧠 Открыть чат DeepSeek AI
+                        </a>
+                        <a href="https://a.ya.ru" target="_blank" rel="noopener noreferrer" class="cool-btn" style="flex: 1; justify-content: center; text-decoration: none; border-color: rgba(163, 113, 247, 0.5); color: #d2a8ff; background: rgba(163, 113, 247, 0.14);">
+                            🟣 Открыть чат Яндекс Алисы
+                        </a>
+                    </div>
+                    <div id="chat-ai-hw-links-list" class="chat-ai-hw-links-list">
+                        <!-- Homework AI chat links rendered dynamically -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Offline Download & Mobile Cheat Sheet Modal -->
+    <div id="offline-modal" class="modal-backdrop">
+        <div class="modal-window" style="max-width: 540px;">
+            <div class="modal-header">
+                <h3 style="font-weight: 700; font-size: 1.18rem; display: flex; align-items: center; gap: 8px;">
+                    <span>📲</span> Офлайн-версия на телефон
+                </h3>
+                <button class="modal-close-btn" id="close-offline-modal">&times;</button>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <p style="font-size: 0.86rem; color: var(--text-secondary); line-height: 1.45;">
+                    Сохраните расписание, ДЗ, готовые ответы и прямые ссылки на чаты <b>DeepSeek AI</b>, <b>Яндекс Алиса AI</b> и <b>ГДЗ</b> прямо на телефон:
+                </p>
+
+                <button type="button" class="cool-btn primary" id="offline-dl-html-btn" style="width: 100%; justify-content: center; padding: 12px 14px; font-size: 0.95rem; border-radius: 10px;">
+                    📲 Скачать офлайн-страницу (.HTML)
+                </button>
+
+                <button type="button" class="cool-btn" id="offline-dl-txt-btn" style="width: 100%; justify-content: center; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border-color: rgba(46, 160, 67, 0.5); background: rgba(46, 160, 67, 0.14); color: #3fb950; font-weight: 600;">
+                    📄 Скачать текстовый файл (.TXT) — открывается везде
+                </button>
+
+                <button type="button" class="cool-btn" id="offline-copy-all-btn" style="width: 100%; justify-content: center; padding: 11px 14px; font-size: 0.92rem; border-radius: 10px; border-color: rgba(163, 113, 247, 0.5); background: rgba(163, 113, 247, 0.14); color: #d2a8ff; font-weight: 600;">
+                    📋 Скопировать всё (для Избранного в Telegram / Заметок)
+                </button>
+
+                <div style="margin-top: 6px;">
+                    <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 6px; display: flex; justify-content: space-between;">
+                        <span>Предпросмотр шпаргалки (Расписание + ДЗ + Чаты ИИ):</span>
+                    </div>
+                    <textarea id="offline-preview-textarea" class="form-textarea" rows="7" readonly style="font-size: 0.8rem; line-height: 1.4; font-family: monospace; background: #090d13;"></textarea>
                 </div>
             </div>
         </div>
@@ -841,13 +1084,9 @@ service cloud.firestore {
             <span class="mob-nav-icon">🔔</span>
             <span class="mob-nav-label">Звонки</span>
         </button>
-        <button class="mobile-nav-item" id="mob-nav-admin" type="button" style="display: none;" title="Панель администратора">
-            <span class="mob-nav-icon">⚙️</span>
-            <span class="mob-nav-label">Админ</span>
-        </button>
-        <button class="mobile-nav-item" id="mob-nav-auth" type="button" title="Вход в аккаунт">
-            <span class="mob-nav-icon">👤</span>
-            <span class="mob-nav-label">Вход</span>
+        <button class="mobile-nav-item" id="mob-nav-account" type="button" title="Аккаунт и Админ-панель">
+            <span class="mob-nav-icon" id="mob-nav-account-icon">👤</span>
+            <span class="mob-nav-label" id="mob-nav-account-label">Кабинет</span>
         </button>
     </nav>
 
