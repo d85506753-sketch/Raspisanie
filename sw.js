@@ -1,7 +1,8 @@
-const CACHE_NAME = 'curie-schedule-v1';
+const CACHE_NAME = 'curie-schedule-v4';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
+    './users.html',
     './manifest.json',
     './css/style.css',
     './js/firebase-config.js',

@@ -4,12 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <meta name="theme-color" content="#080b12">
-    <title>👥 Все пользователи и Админы — База данных сайта</title>
+    <title>👥 Все пользователи и Админы — База данных Firebase</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=20260925_5">
     <style>
+        body {
+            background: #080b12;
+            color: #f8fafc;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            margin: 0;
+        }
         .users-page-wrapper {
             max-width: 1180px;
             margin: 0 auto;
@@ -25,15 +32,36 @@
             gap: 14px;
             padding: 18px 22px;
             border-radius: 20px;
-            background: rgba(17, 24, 39, 0.78);
+            background: rgba(17, 24, 39, 0.85);
             border: 1px solid rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(18px);
-            margin-bottom: 22px;
+            margin-bottom: 16px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
         }
         .users-top-title {
             display: flex;
             align-items: center;
             gap: 14px;
+            flex-wrap: wrap;
+        }
+        .back-schedule-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            border-radius: 12px;
+            background: rgba(99, 102, 241, 0.16);
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            color: #a5b4fc;
+            font-weight: 700;
+            font-size: 0.86rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        .back-schedule-btn:hover {
+            background: rgba(99, 102, 241, 0.28);
+            color: #fff;
+            transform: translateY(-1px);
         }
         .users-top-title h1 {
             font-size: 1.35rem;
@@ -46,7 +74,30 @@
         .users-top-title p {
             margin: 3px 0 0;
             font-size: 0.82rem;
-            color: var(--text-muted, #94a3b8);
+            color: #94a3b8;
+        }
+        /* Admin Security Banner */
+        .security-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 14px 20px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            font-size: 0.86rem;
+            transition: all 0.25s ease;
+        }
+        .security-banner.is-protected {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            color: #fecaca;
+        }
+        .security-banner.is-admin-unlocked {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.14), rgba(16, 185, 129, 0.12));
+            border: 1px solid rgba(245, 158, 11, 0.45);
+            color: #fde68a;
         }
         .users-stats-grid {
             display: grid;
@@ -57,7 +108,7 @@
         .users-stat-card {
             padding: 18px 20px;
             border-radius: 18px;
-            background: rgba(17, 24, 39, 0.72);
+            background: rgba(17, 24, 39, 0.8);
             border: 1px solid rgba(255, 255, 255, 0.08);
             display: flex;
             align-items: center;
@@ -74,19 +125,20 @@
             flex-shrink: 0;
         }
         .users-stat-value {
-            font-size: 1.65rem;
+            font-size: 1.7rem;
             font-weight: 800;
             line-height: 1.1;
             font-family: 'JetBrains Mono', monospace;
+            color: #fff;
         }
         .users-stat-label {
             font-size: 0.8rem;
-            color: var(--text-muted, #94a3b8);
+            color: #94a3b8;
             margin-top: 2px;
         }
         .users-layout-grid {
             display: grid;
-            grid-template-columns: 350px 1fr;
+            grid-template-columns: 360px 1fr;
             gap: 20px;
             align-items: start;
         }
@@ -98,7 +150,7 @@
         .users-panel-card {
             padding: 22px;
             border-radius: 20px;
-            background: rgba(17, 24, 39, 0.78);
+            background: rgba(17, 24, 39, 0.82);
             border: 1px solid rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(16px);
         }
@@ -109,9 +161,101 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            color: #fff;
         }
         .users-section-block {
-            margin-bottom: 22px;
+            margin-bottom: 20px;
+        }
+        /* Dark Form Styling */
+        .db-form-group {
+            margin-bottom: 14px;
+        }
+        .db-form-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            margin-bottom: 6px;
+        }
+        .db-input, .db-select {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 11px 14px;
+            border-radius: 12px;
+            background: rgba(8, 11, 18, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            color: #f8fafc;
+            font-size: 0.9rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .db-input::placeholder {
+            color: #64748b;
+        }
+        .db-input:focus, .db-select:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        .db-submit-btn {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.92rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+            margin-top: 4px;
+        }
+        .db-submit-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.5);
+        }
+        .db-divider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 16px 0;
+            color: #64748b;
+            font-size: 0.78rem;
+        }
+        .db-divider::before, .db-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .db-google-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 11px 16px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            color: #f8fafc;
+            font-weight: 600;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .db-google-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.28);
+        }
+        .quick-grant-bar {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            flex-wrap: wrap;
         }
         .users-toolbar {
             display: flex;
@@ -122,14 +266,18 @@
             margin-bottom: 16px;
         }
         .users-search-input {
-            flex: 1;
-            min-width: 200px;
-            padding: 10px 14px;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 11px 14px;
             border-radius: 12px;
-            background: rgba(0, 0, 0, 0.35);
+            background: rgba(8, 11, 18, 0.75);
             border: 1px solid rgba(255, 255, 255, 0.12);
             color: #fff;
             font-size: 0.9rem;
+            outline: none;
+        }
+        .users-search-input:focus {
+            border-color: #6366f1;
         }
         .users-filter-tabs {
             display: flex;
@@ -148,8 +296,8 @@
             transition: all 0.2s ease;
         }
         .users-filter-btn.active {
-            background: rgba(99, 102, 241, 0.25);
-            border-color: rgba(99, 102, 241, 0.6);
+            background: rgba(99, 102, 241, 0.28);
+            border-color: rgba(99, 102, 241, 0.65);
             color: #fff;
         }
         .users-cards-list {
@@ -165,16 +313,16 @@
             gap: 12px;
             padding: 14px 16px;
             border-radius: 14px;
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(255, 255, 255, 0.035);
             border: 1px solid rgba(255, 255, 255, 0.08);
             transition: all 0.2s ease;
         }
         .user-db-row:hover {
-            background: rgba(255, 255, 255, 0.055);
+            background: rgba(255, 255, 255, 0.06);
             border-color: rgba(255, 255, 255, 0.16);
         }
         .user-db-row.is-admin-row {
-            background: linear-gradient(135deg, rgba(245, 158, 11, 0.11), rgba(168, 85, 247, 0.08));
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(168, 85, 247, 0.08));
             border-color: rgba(245, 158, 11, 0.35);
         }
         .user-db-main {
@@ -195,6 +343,7 @@
             background: linear-gradient(135deg, #6366f1, #8b5cf6);
             color: #fff;
             flex-shrink: 0;
+            overflow: hidden;
         }
         .user-db-row.is-admin-row .user-db-avatar {
             background: linear-gradient(135deg, #f59e0b, #ea580c);
@@ -216,6 +365,7 @@
             color: #94a3b8;
             font-family: 'JetBrains Mono', monospace;
             word-break: break-all;
+            margin-top: 2px;
         }
         .user-db-actions {
             display: flex;
@@ -224,11 +374,11 @@
             flex-wrap: wrap;
         }
         .user-action-btn {
-            padding: 6px 11px;
+            padding: 7px 12px;
             border-radius: 9px;
-            font-size: 0.76rem;
-            font-weight: 600;
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            font-size: 0.77rem;
+            font-weight: 700;
+            border: 1px solid rgba(255, 255, 255, 0.14);
             background: rgba(255, 255, 255, 0.06);
             color: #e2e8f0;
             cursor: pointer;
@@ -236,10 +386,23 @@
         }
         .user-action-btn:hover {
             background: rgba(255, 255, 255, 0.14);
+            transform: translateY(-1px);
         }
-        .user-action-btn.promote-btn {
-            border-color: rgba(245, 158, 11, 0.4);
-            color: #fcd34d;
+        .user-action-btn.grant-admin-btn {
+            background: rgba(245, 158, 11, 0.16);
+            border-color: rgba(245, 158, 11, 0.5);
+            color: #fde68a;
+        }
+        .user-action-btn.grant-admin-btn:hover {
+            background: rgba(245, 158, 11, 0.28);
+        }
+        .user-action-btn.revoke-admin-btn {
+            background: rgba(239, 68, 68, 0.14);
+            border-color: rgba(239, 68, 68, 0.45);
+            color: #fca5a5;
+        }
+        .user-action-btn.revoke-admin-btn:hover {
+            background: rgba(239, 68, 68, 0.25);
         }
         .user-action-btn.delete-btn {
             border-color: rgba(239, 68, 68, 0.35);
@@ -247,9 +410,38 @@
         }
         .admins-showcase-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 12px;
             margin-top: 12px;
+        }
+        .badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 9px;
+            border-radius: 99px;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+        .badge-admin {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.4);
+        }
+        .badge-student {
+            background: rgba(16, 185, 129, 0.16);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.35);
+        }
+        .badge-google {
+            background: rgba(59, 130, 246, 0.16);
+            color: #93c5fd;
+            border: 1px solid rgba(59, 130, 246, 0.35);
+        }
+        .badge-site {
+            background: rgba(168, 85, 247, 0.16);
+            color: #d8b4fe;
+            border: 1px solid rgba(168, 85, 247, 0.35);
         }
     </style>
 </head>
@@ -264,38 +456,50 @@
         <!-- Top Navigation Bar -->
         <header class="users-top-bar">
             <div class="users-top-title">
-                <a href="index.html" class="action-btn" style="text-decoration:none; padding:9px 14px; font-weight:700;">
+                <a href="index.html" class="back-schedule-btn">
                     ⬅ Назад к расписанию
                 </a>
                 <div>
                     <h1>👥 База пользователей и Админов</h1>
-                    <p>Простая регистрация через сайт • Живая синхронизация списка участников</p>
+                    <p>Управление админками • Защита от случайных гостей • Связь с Firebase</p>
                 </div>
             </div>
 
             <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                <span id="db-sync-badge" class="role-badge student-role" style="padding:6px 12px; font-size:0.78rem;">
-                    ☁️ Подключение к базе...
+                <span id="db-sync-badge" class="badge-pill badge-student" style="padding:7px 12px; font-size:0.78rem;">
+                    🟢 Подключение к Firebase...
                 </span>
                 <div id="active-session-pill" style="font-size:0.82rem; color:#cbd5e1; background:rgba(255,255,255,0.06); padding:7px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.1);">
-                    Гость
+                    Проверка входа...
                 </div>
             </div>
         </header>
+
+        <!-- Admin Protection Banner -->
+        <div id="admin-security-banner" class="security-banner is-protected">
+            <div id="admin-security-text">
+                🛡️ <strong>Защита включена (Режим чтения):</strong> Вы вошли не как Администратор. Случайные посетители и обычные ученики не могут выдавать/забирать админки или удалять людей.
+            </div>
+            <div id="admin-security-actions" style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button type="button" id="banner-google-admin-btn" class="user-action-btn grant-admin-btn">
+                    👑 Войти как Админ (Google)
+                </button>
+            </div>
+        </div>
 
         <!-- Summary Counters -->
         <section class="users-stats-grid">
             <div class="users-stat-card">
                 <div class="users-stat-icon" style="background:rgba(99, 102, 241, 0.18); color:#818cf8;">👥</div>
                 <div>
-                    <div class="users-stat-value" id="stat-total-users">0</div>
+                    <div class="users-stat-value" id="stat-total-users">3</div>
                     <div class="users-stat-label">Всего в базе Firebase</div>
                 </div>
             </div>
             <div class="users-stat-card">
                 <div class="users-stat-icon" style="background:rgba(245, 158, 11, 0.18); color:#fbbf24;">👑</div>
                 <div>
-                    <div class="users-stat-value" id="stat-total-admins">0</div>
+                    <div class="users-stat-value" id="stat-total-admins">3</div>
                     <div class="users-stat-label">Администраторов сайта</div>
                 </div>
             </div>
@@ -309,7 +513,7 @@
             <div class="users-stat-card">
                 <div class="users-stat-icon" style="background:rgba(59, 130, 246, 0.18); color:#60a5fa;">🌐</div>
                 <div>
-                    <div class="users-stat-value" id="stat-total-google">0</div>
+                    <div class="users-stat-value" id="stat-total-google">3</div>
                     <div class="users-stat-label">Через Google Аккаунт</div>
                 </div>
             </div>
@@ -317,41 +521,44 @@
 
         <!-- Main 2-Column Layout -->
         <div class="users-layout-grid">
-            <!-- Left Column: Simple Site Registration & Quick Login Form -->
+            <!-- Left Column: Simple Site Registration & Google Login -->
             <aside class="users-panel-card">
                 <h2>✨ Регистрация в базу Firebase</h2>
                 <p style="font-size:0.8rem; color:#94a3b8; margin-bottom:16px;">
-                    Аккаунт автоматически сохраняется в Firebase и синхронизируется со всеми устройствами.
+                    Добавьте аккаунт или войдите через Google — он сразу появится в общем списке.
                 </p>
 
                 <form id="quick-db-register-form">
-                    <div class="form-group">
+                    <div class="db-form-group">
                         <label for="db-reg-name">Ваше имя или Никнейм</label>
-                        <input type="text" id="db-reg-name" placeholder="Например: Степан / Иван" required>
+                        <input type="text" id="db-reg-name" class="db-input" placeholder="Например: Степан / Иван" required>
                     </div>
-                    <div class="form-group">
+                    <div class="db-form-group">
                         <label for="db-reg-login">Логин или Email</label>
-                        <input type="text" id="db-reg-login" placeholder="Например: ivan2026 или mail@gmail.com" required>
+                        <input type="text" id="db-reg-login" class="db-input" placeholder="Например: ivan2026 или mail@gmail.com" required>
                     </div>
-                    <div class="form-group">
+                    <div class="db-form-group">
                         <label for="db-reg-password">Пароль (любой удобный)</label>
-                        <input type="password" id="db-reg-password" placeholder="Придумайте пароль" required>
+                        <input type="password" id="db-reg-password" class="db-input" placeholder="Придумайте пароль" required>
                     </div>
-                    <div class="form-group">
-                        <label for="db-reg-role">Роль пользователя</label>
-                        <select id="db-reg-role" style="width:100%; padding:10px 12px; border-radius:10px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.14); color:#fff;">
+
+                    <!-- Role selector is ONLY shown if current user is verified Admin! -->
+                    <div class="db-form-group" id="admin-only-role-group" style="display:none;">
+                        <label for="db-reg-role">Роль пользователя (Только для Админа)</label>
+                        <select id="db-reg-role" class="db-select">
                             <option value="student">🎓 Ученик (Пользователь)</option>
                             <option value="admin">👑 Администратор</option>
                         </select>
                     </div>
 
-                    <button type="submit" class="primary-btn full-width" style="margin-top:6px;">
+                    <button type="submit" class="db-submit-btn">
                         🚀 Зарегистрировать и войти
                     </button>
                 </form>
 
-                <div class="auth-divider" style="margin:14px 0;"><span>или через Google</span></div>
-                <button type="button" id="users-page-google-btn" class="google-auth-btn full-width">
+                <div class="db-divider"><span>или через Google</span></div>
+
+                <button type="button" id="users-page-google-btn" class="db-google-btn">
                     <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.7 14.8 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.8C6.2 7.2 8.9 5 12 5z"/><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.6l3.7 2.9c2.2-2 3.7-5 3.7-8.7z"/><path fill="#FBBC05" d="M5.3 14.8c-.2-.8-.4-1.6-.4-2.5s.2-1.7.4-2.5L1.6 7C.6 9 0 11.2 0 13.5s.6 4.5 1.6 6.5l3.7-2.8z"/><path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.8-2.1-6.7-5l-3.7 2.8C3.5 21.4 7.4 24 12 24z"/></svg>
                     <span>Войти через Google Аккаунт</span>
                 </button>
@@ -367,11 +574,20 @@
                         <div>
                             <h2>👑 Администраторы сайта</h2>
                             <p style="font-size:0.8rem; color:#94a3b8; margin:0;">
-                                Пользователи с полным доступом к управлению расписанием, ДЗ и чатом
+                                Пользователи с полным доступом к управлению расписанием, ДЗ, чатом и ролями
                             </p>
                         </div>
                     </div>
+
                     <div id="admins-list-container" class="admins-showcase-grid"></div>
+
+                    <!-- Admin-Only Quick Grant Bar -->
+                    <div id="quick-grant-admin-box" class="quick-grant-bar" style="display:none;">
+                        <input type="text" id="quick-grant-email-input" class="db-input" style="flex:1; min-width:220px;" placeholder="⚡ Введите Email или Никнейм, чтобы сразу выдать админку...">
+                        <button type="button" id="quick-grant-admin-btn" class="user-action-btn grant-admin-btn" style="padding:10px 16px; font-size:0.84rem;">
+                            👑 Выдать админку
+                        </button>
+                    </div>
                 </div>
 
                 <!-- All Users Directory -->
@@ -387,7 +603,7 @@
                     </div>
 
                     <div style="margin-bottom:14px;">
-                        <input type="text" id="users-search-box" class="users-search-input" placeholder="🔍 Поиск по имени, логину или email..." style="width:100%;">
+                        <input type="text" id="users-search-box" class="users-search-input" placeholder="🔍 Поиск по имени, логину или email...">
                     </div>
 
                     <div id="all-users-list-container" class="users-cards-list"></div>
@@ -396,15 +612,28 @@
         </div>
     </div>
 
-    <!-- Firebase SDKs & Site Auth DB -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
-    <script src="js/firebase-config.js"></script>
-    <script src="js/auth.js"></script>
+    <script src="js/firebase-config.js?v=20260925_5"></script>
 
+    <!-- Self-Contained Firebase Users & Admin Role Controller -->
     <script>
         (function() {
+            const CORE_ADMINS = [
+                { email: 'roganinstepan36@gmail.com', displayName: 'Степан Роганин', role: 'admin', provider: 'google', isCoreAdmin: true },
+                { email: 'steamvichsteam@gmail.com', displayName: 'steam steamvich', role: 'admin', provider: 'google', isCoreAdmin: true },
+                { email: 'm69227503@gmail.com', displayName: 'Администратор (m69227503)', role: 'admin', provider: 'google', isCoreAdmin: true }
+            ];
+            const RELAY_TOPIC = 'curie_raspisanie_3a39d_users_v2';
+
+            let db = null;
+            let authInstance = null;
+            let usersDb = [];
+            let deletedEmails = [];
+            let revokedAdminEmails = [];
+            let currentUser = null;
             let currentFilter = 'all';
             let searchQuery = '';
 
@@ -414,49 +643,492 @@
                 }[m]));
             }
 
+            function isCoreAdminEmail(email) {
+                const clean = String(email || '').toLowerCase().trim();
+                return CORE_ADMINS.some(a => a.email === clean);
+            }
+
+            function isUserRecordAdmin(u) {
+                if (!u) return false;
+                const clean = String(u.email || '').toLowerCase().trim();
+                if (revokedAdminEmails.includes(clean)) return false;
+                return u.role === 'admin' || isCoreAdminEmail(clean);
+            }
+
+            // Strict check: Is the visitor currently logged in as a verified Admin?
+            function isCurrentUserVerifiedAdmin() {
+                if (!currentUser || !currentUser.email) return false;
+                const clean = String(currentUser.email).toLowerCase().trim();
+                if (isCoreAdminEmail(clean) && !revokedAdminEmails.includes(clean)) return true;
+                const dbRecord = usersDb.find(u => String(u.email || '').toLowerCase().trim() === clean);
+                return Boolean(dbRecord && dbRecord.role === 'admin' && !revokedAdminEmails.includes(clean));
+            }
+
             function isGoogleAccount(u) {
                 if (!u) return false;
                 return u.provider === 'google' || String(u.email || '').toLowerCase().includes('@gmail.com');
             }
 
+            function loadLocal() {
+                try {
+                    const raw = localStorage.getItem('curie_users_db');
+                    usersDb = raw ? JSON.parse(raw) : [];
+                    if (!Array.isArray(usersDb)) usersDb = [];
+                } catch (e) {
+                    usersDb = [];
+                }
+                try {
+                    const del = localStorage.getItem('curie_deleted_users');
+                    deletedEmails = del ? JSON.parse(del) : [];
+                    if (!Array.isArray(deletedEmails)) deletedEmails = [];
+                } catch (e) {
+                    deletedEmails = [];
+                }
+                try {
+                    const rev = localStorage.getItem('curie_revoked_admins');
+                    revokedAdminEmails = rev ? JSON.parse(rev) : [];
+                    if (!Array.isArray(revokedAdminEmails)) revokedAdminEmails = [];
+                } catch (e) {
+                    revokedAdminEmails = [];
+                }
+                try {
+                    const savedUser = localStorage.getItem('curie_local_user');
+                    if (savedUser) currentUser = JSON.parse(savedUser);
+                } catch (e) {}
+
+                ensureCoreAdmins();
+            }
+
+            function saveLocal() {
+                try {
+                    localStorage.setItem('curie_users_db', JSON.stringify(usersDb));
+                    localStorage.setItem('curie_deleted_users', JSON.stringify(deletedEmails));
+                    localStorage.setItem('curie_revoked_admins', JSON.stringify(revokedAdminEmails));
+                } catch (e) {}
+            }
+
+            function ensureCoreAdmins() {
+                CORE_ADMINS.forEach(core => {
+                    const existing = usersDb.find(u => String(u.email || '').toLowerCase().trim() === core.email);
+                    const isRevoked = revokedAdminEmails.includes(core.email);
+                    if (!existing) {
+                        usersDb.push({
+                            uid: 'admin_' + core.email.split('@')[0],
+                            email: core.email,
+                            displayName: core.displayName,
+                            role: isRevoked ? 'student' : 'admin',
+                            provider: 'google',
+                            isCoreAdmin: true,
+                            createdAt: new Date().toISOString(),
+                            lastSeen: new Date().toISOString()
+                        });
+                    } else {
+                        existing.isCoreAdmin = true;
+                        if (!isRevoked && !existing.role) existing.role = 'admin';
+                        if (!existing.displayName || existing.displayName === core.email.split('@')[0]) {
+                            existing.displayName = core.displayName;
+                        }
+                    }
+                });
+                saveLocal();
+            }
+
+            function mergeUsers(incomingList, shouldPersistCloud = false) {
+                const delSet = new Set((deletedEmails || []).map(e => String(e).toLowerCase().trim()));
+                const map = new Map();
+
+                usersDb.forEach(u => {
+                    if (u && u.email) {
+                        const k = String(u.email).toLowerCase().trim();
+                        if (!delSet.has(k) || isCoreAdminEmail(k)) {
+                            map.set(k, u);
+                        }
+                    }
+                });
+
+                (incomingList || []).forEach(u => {
+                    if (u && u.email) {
+                        const k = String(u.email).toLowerCase().trim();
+                        if (delSet.has(k) && !isCoreAdminEmail(k)) return;
+                        const prev = map.get(k);
+                        const isRevoked = revokedAdminEmails.includes(k);
+
+                        if (!prev) {
+                            map.set(k, {
+                                uid: u.uid || ('u_' + Date.now()),
+                                email: u.email.trim(),
+                                displayName: u.displayName || u.email.split('@')[0],
+                                photoURL: u.photoURL || '',
+                                password: u.password || '',
+                                role: isRevoked ? 'student' : (u.role || (isCoreAdminEmail(k) ? 'admin' : 'student')),
+                                roleUpdatedAt: u.roleUpdatedAt || 0,
+                                provider: u.provider || (k.includes('@gmail.com') ? 'google' : 'firebase'),
+                                isCoreAdmin: isCoreAdminEmail(k),
+                                createdAt: u.createdAt || new Date().toISOString(),
+                                lastSeen: u.lastSeen || new Date().toISOString()
+                            });
+                        } else {
+                            const incomingNewer = (u.roleUpdatedAt || 0) >= (prev.roleUpdatedAt || 0);
+                            const resolvedRole = isRevoked
+                                ? 'student'
+                                : (incomingNewer && u.role ? u.role : (prev.role || u.role || 'student'));
+                            map.set(k, {
+                                ...prev,
+                                ...u,
+                                displayName: u.displayName || prev.displayName,
+                                photoURL: u.photoURL || prev.photoURL || '',
+                                password: u.password || prev.password || '',
+                                provider: (prev.provider === 'google' || u.provider === 'google' || k.includes('@gmail.com')) ? 'google' : (u.provider || prev.provider || 'firebase'),
+                                role: resolvedRole,
+                                roleUpdatedAt: Math.max(u.roleUpdatedAt || 0, prev.roleUpdatedAt || 0),
+                                isCoreAdmin: isCoreAdminEmail(k)
+                            });
+                        }
+                    }
+                });
+
+                usersDb = Array.from(map.values());
+                ensureCoreAdmins();
+                saveLocal();
+                renderDirectory();
+
+                if (shouldPersistCloud && db && isCurrentUserVerifiedAdmin()) {
+                    syncToFirestore(false);
+                }
+            }
+
+            function upsertUser(userObj, syncCloud = true) {
+                const cleanEmail = String(userObj.email || userObj.displayName || '').trim();
+                if (!cleanEmail) return null;
+                const key = cleanEmail.toLowerCase();
+
+                deletedEmails = (deletedEmails || []).filter(e => String(e).toLowerCase().trim() !== key);
+
+                let existing = usersDb.find(u => String(u.email || '').toLowerCase().trim() === key);
+                const now = new Date().toISOString();
+
+                if (existing) {
+                    if (userObj.uid) existing.uid = userObj.uid;
+                    if (userObj.displayName) existing.displayName = userObj.displayName;
+                    if (userObj.photoURL) existing.photoURL = userObj.photoURL;
+                    if (userObj.password) existing.password = userObj.password;
+                    if (userObj.role) {
+                        existing.role = userObj.role;
+                        existing.roleUpdatedAt = Date.now();
+                    }
+                    if (userObj.provider) existing.provider = userObj.provider;
+                    existing.lastSeen = now;
+                } else {
+                    const defaultRole = (isCoreAdminEmail(key) && !revokedAdminEmails.includes(key)) ? 'admin' : (userObj.role || 'student');
+                    existing = {
+                        uid: userObj.uid || ('user_' + Date.now()),
+                        email: cleanEmail,
+                        displayName: (userObj.displayName || cleanEmail.split('@')[0]).trim(),
+                        photoURL: userObj.photoURL || '',
+                        password: userObj.password || '',
+                        role: defaultRole,
+                        roleUpdatedAt: Date.now(),
+                        provider: userObj.provider || (key.includes('@gmail.com') ? 'google' : 'firebase'),
+                        isCoreAdmin: isCoreAdminEmail(key),
+                        createdAt: now,
+                        lastSeen: now
+                    };
+                    usersDb.push(existing);
+                }
+
+                saveLocal();
+                renderDirectory();
+
+                try {
+                    fetch(`https://ntfy.sh/${RELAY_TOPIC}`, {
+                        method: 'POST',
+                        body: JSON.stringify({ type: 'user_upsert', user: existing, revokedAdmins: revokedAdminEmails, ts: Date.now() })
+                    }).catch(() => {});
+                } catch (e) {}
+
+                if (syncCloud) {
+                    syncToFirestore(false);
+                }
+                return existing;
+            }
+
+            function setRoleForUser(emailOrLogin, newRole) {
+                if (!isCurrentUserVerifiedAdmin()) {
+                    alert('⛔ Защита: Только действующий Администратор может выдавать или забирать админки!');
+                    return;
+                }
+                const clean = String(emailOrLogin || '').trim().toLowerCase();
+                if (!clean) return;
+
+                if (newRole === 'admin') {
+                    revokedAdminEmails = revokedAdminEmails.filter(e => e !== clean);
+                } else {
+                    if (!revokedAdminEmails.includes(clean)) {
+                        revokedAdminEmails.push(clean);
+                    }
+                }
+
+                let target = usersDb.find(u =>
+                    String(u.email || '').toLowerCase().trim() === clean ||
+                    String(u.displayName || '').toLowerCase().trim() === clean
+                );
+
+                if (target) {
+                    target.role = newRole;
+                    target.roleUpdatedAt = Date.now();
+                } else {
+                    target = {
+                        uid: 'user_' + Date.now(),
+                        email: emailOrLogin.trim(),
+                        displayName: emailOrLogin.trim().split('@')[0],
+                        role: newRole,
+                        roleUpdatedAt: Date.now(),
+                        provider: clean.includes('@gmail.com') ? 'google' : 'firebase',
+                        createdAt: new Date().toISOString(),
+                        lastSeen: new Date().toISOString()
+                    };
+                    usersDb.push(target);
+                }
+
+                saveLocal();
+                syncToFirestore(true);
+
+                if (currentUser && String(currentUser.email || '').toLowerCase().trim() === String(target.email).toLowerCase().trim()) {
+                    setSession(target);
+                } else {
+                    renderDirectory();
+                }
+            }
+
+            function syncToFirestore(broadcastFull = true) {
+                saveLocal();
+                if (broadcastFull) {
+                    try {
+                        fetch(`https://ntfy.sh/${RELAY_TOPIC}`, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                type: 'users_sync',
+                                items: usersDb,
+                                deletedEmails: deletedEmails,
+                                revokedAdmins: revokedAdminEmails,
+                                ts: Date.now()
+                            })
+                        }).catch(() => {});
+                    } catch (e) {}
+                }
+
+                if (!db) return;
+                db.collection('curie_data').doc('users').set({
+                    items: usersDb,
+                    deletedEmails: deletedEmails,
+                    revokedAdmins: revokedAdminEmails,
+                    updatedAt: new Date().toISOString()
+                }).then(() => {
+                    const badge = document.getElementById('db-sync-badge');
+                    if (badge) {
+                        badge.innerText = '🟢 Firebase синхронизирован (raspisanie-3a39d)';
+                        badge.className = 'badge-pill badge-student';
+                    }
+                }).catch(err => {
+                    console.warn('Firestore users write notice:', err);
+                });
+            }
+
+            function setSession(userRecord) {
+                if (!userRecord) return;
+                const clean = String(userRecord.email || '').toLowerCase().trim();
+                const isAdm = !revokedAdminEmails.includes(clean) && (userRecord.role === 'admin' || isCoreAdminEmail(clean));
+                currentUser = {
+                    uid: userRecord.uid || ('user_' + Date.now()),
+                    email: userRecord.email,
+                    displayName: userRecord.displayName || userRecord.email.split('@')[0],
+                    photoURL: userRecord.photoURL || '',
+                    role: isAdm ? 'admin' : 'student'
+                };
+                localStorage.setItem('curie_local_user', JSON.stringify(currentUser));
+                renderDirectory();
+            }
+
+            function initFirebaseConnection() {
+                const config = window.FIREBASE_CONFIG;
+                if (!window.firebase || !config) return;
+
+                try {
+                    if (!firebase.apps.length) {
+                        firebase.initializeApp(config);
+                    }
+                    db = firebase.firestore();
+                    authInstance = firebase.auth();
+
+                    const badge = document.getElementById('db-sync-badge');
+                    if (badge) {
+                        badge.innerText = '🟢 Связь с Firebase активна';
+                    }
+
+                    authInstance.onAuthStateChanged((fbUser) => {
+                        if (fbUser) {
+                            const isGoog = Array.isArray(fbUser.providerData) &&
+                                fbUser.providerData.some(p => p && p.providerId === 'google.com');
+                            const rawEmail = fbUser.email || (fbUser.uid + '@firebase.user');
+                            const cleanEmail = rawEmail.endsWith('@curie-site.app')
+                                ? rawEmail.replace('@curie-site.app', '')
+                                : rawEmail;
+
+                            const rec = upsertUser({
+                                uid: fbUser.uid,
+                                email: cleanEmail,
+                                displayName: fbUser.displayName || cleanEmail.split('@')[0],
+                                photoURL: fbUser.photoURL || '',
+                                provider: isGoog || cleanEmail.includes('@gmail.com') ? 'google' : 'firebase'
+                            }, true);
+
+                            setSession(rec);
+                        } else {
+                            renderDirectory();
+                        }
+                    });
+
+                    db.collection('curie_data').doc('users').onSnapshot((doc) => {
+                        if (doc.exists) {
+                            const data = doc.data();
+                            if (data && Array.isArray(data.deletedEmails)) {
+                                data.deletedEmails.forEach(e => {
+                                    if (!deletedEmails.includes(e)) deletedEmails.push(e);
+                                });
+                            }
+                            if (data && Array.isArray(data.revokedAdmins)) {
+                                revokedAdminEmails = data.revokedAdmins;
+                            }
+                            if (data && Array.isArray(data.items)) {
+                                mergeUsers(data.items, false);
+                            }
+                        } else if (isCurrentUserVerifiedAdmin()) {
+                            syncToFirestore(false);
+                        }
+                    }, () => {});
+
+                    db.collection('curie_data').doc('class_chat').onSnapshot((doc) => {
+                        if (doc.exists) {
+                            const data = doc.data();
+                            if (data && Array.isArray(data.messages)) {
+                                const harvested = [];
+                                data.messages.forEach(m => {
+                                    if (m && m.authorEmail && m.authorEmail !== 'admin') {
+                                        harvested.push({
+                                            email: m.authorEmail,
+                                            displayName: m.authorName || m.authorEmail.split('@')[0],
+                                            provider: m.authorEmail.includes('@gmail.com') ? 'google' : 'firebase'
+                                        });
+                                    }
+                                });
+                                if (harvested.length > 0) {
+                                    mergeUsers(harvested, false);
+                                }
+                            }
+                        }
+                    }, () => {});
+                } catch (e) {
+                    console.error('Firebase init error on users.html:', e);
+                }
+
+                fetch(`https://ntfy.sh/${RELAY_TOPIC}/json?poll=1&since=72h`)
+                    .then(r => r.text())
+                    .then(text => {
+                        const list = [];
+                        text.split('\n').forEach(line => {
+                            if (!line.trim()) return;
+                            try {
+                                const pkt = JSON.parse(line);
+                                if (pkt && pkt.event === 'message' && pkt.message) {
+                                    const payload = JSON.parse(pkt.message);
+                                    if (Array.isArray(payload.revokedAdmins)) {
+                                        revokedAdminEmails = payload.revokedAdmins;
+                                    }
+                                    if (payload && payload.type === 'user_upsert' && payload.user) {
+                                        list.push(payload.user);
+                                    } else if (payload && payload.type === 'users_sync' && Array.isArray(payload.items)) {
+                                        list.push(...payload.items);
+                                    }
+                                }
+                            } catch (e) {}
+                        });
+                        if (list.length > 0) {
+                            mergeUsers(list, true);
+                        }
+                    })
+                    .catch(() => {});
+
+                try {
+                    if (window.EventSource) {
+                        const es = new EventSource(`https://ntfy.sh/${RELAY_TOPIC}/sse`);
+                        es.onmessage = (evt) => {
+                            try {
+                                const pkt = JSON.parse(evt.data);
+                                if (pkt && pkt.message) {
+                                    const payload = JSON.parse(pkt.message);
+                                    if (Array.isArray(payload.revokedAdmins)) {
+                                        revokedAdminEmails = payload.revokedAdmins;
+                                    }
+                                    if (payload && payload.type === 'user_upsert' && payload.user) {
+                                        mergeUsers([payload.user], true);
+                                    } else if (payload && payload.type === 'users_sync' && Array.isArray(payload.items)) {
+                                        mergeUsers(payload.items, false);
+                                    }
+                                }
+                            } catch (e) {}
+                        };
+                    }
+                } catch (e) {}
+            }
+
             function renderDirectory() {
-                const auth = window.authManager;
-                if (!auth) return;
+                const viewerIsAdmin = isCurrentUserVerifiedAdmin();
+                const admins = usersDb.filter(u => isUserRecordAdmin(u));
+                const students = usersDb.filter(u => !isUserRecordAdmin(u));
+                const googleUsers = usersDb.filter(u => isGoogleAccount(u));
 
-                const users = Array.isArray(auth.usersDb) ? auth.usersDb : [];
-                const admins = users.filter(u => u.role === 'admin' || auth.isCoreAdminEmail(u.email));
-                const students = users.filter(u => !(u.role === 'admin' || auth.isCoreAdminEmail(u.email)));
-                const googleUsers = users.filter(u => isGoogleAccount(u));
-
-                document.getElementById('stat-total-users').innerText = users.length;
+                document.getElementById('stat-total-users').innerText = usersDb.length;
                 document.getElementById('stat-total-admins').innerText = admins.length;
                 document.getElementById('stat-total-students').innerText = students.length;
-                const googleEl = document.getElementById('stat-total-google');
-                if (googleEl) googleEl.innerText = googleUsers.length;
+                document.getElementById('stat-total-google').innerText = googleUsers.length;
 
-                // Sync indicator
-                const syncBadge = document.getElementById('db-sync-badge');
-                if (syncBadge) {
-                    if (auth.db) {
-                        syncBadge.innerText = '🟢 Связь с Firebase активна';
-                        syncBadge.className = 'role-badge student-role';
-                    } else {
-                        syncBadge.innerText = '💾 Локальная база браузера';
+                // Update Security Banner & Admin-only controls
+                const secBanner = document.getElementById('admin-security-banner');
+                const secText = document.getElementById('admin-security-text');
+                const secActions = document.getElementById('admin-security-actions');
+                const roleGroup = document.getElementById('admin-only-role-group');
+                const quickGrantBox = document.getElementById('quick-grant-admin-box');
+
+                if (viewerIsAdmin) {
+                    if (secBanner) secBanner.className = 'security-banner is-admin-unlocked';
+                    if (secText) {
+                        secText.innerHTML = `👑 <strong>Режим Администратора активен (${escapeHtml(currentUser.displayName || currentUser.email)}):</strong> Вы можете выдавать и забирать админки в 1 клик. Обычным пользователям эти кнопки недоступны.`;
                     }
+                    if (secActions) secActions.style.display = 'none';
+                    if (roleGroup) roleGroup.style.display = 'block';
+                    if (quickGrantBox) quickGrantBox.style.display = 'flex';
+                } else {
+                    if (secBanner) secBanner.className = 'security-banner is-protected';
+                    if (secText) {
+                        secText.innerHTML = `🛡️ <strong>Защита от случайных гостей включена (Только просмотр):</strong> Выдавать/забирать админки и удалять аккаунты могут только Администраторы.`;
+                    }
+                    if (secActions) secActions.style.display = 'flex';
+                    if (roleGroup) roleGroup.style.display = 'none';
+                    if (quickGrantBox) quickGrantBox.style.display = 'none';
                 }
 
-                // Active session pill
+                // Session Pill
                 const sessionPill = document.getElementById('active-session-pill');
                 if (sessionPill) {
-                    if (auth.currentUser) {
-                        const roleIcon = auth.isAdmin ? '👑 Админ' : '🎓 Ученик';
-                        sessionPill.innerHTML = `Вы вошли как: <strong>${escapeHtml(auth.currentUser.displayName || auth.currentUser.email)}</strong> (${roleIcon})`;
+                    if (currentUser && (currentUser.email || currentUser.displayName)) {
+                        const roleText = viewerIsAdmin ? '👑 Админ' : '🎓 Ученик';
+                        sessionPill.innerHTML = `Вы вошли как: <strong>${escapeHtml(currentUser.displayName || currentUser.email)}</strong> (${roleText})`;
                     } else {
-                        sessionPill.innerText = '🔒 Вы не вошли в аккаунт';
+                        sessionPill.innerText = '🔒 Гость (Только чтение)';
                     }
                 }
 
-                // Render Admins Showcase
+                // Render Admins Grid (with "Забрать админку" button for verified Admins)
                 const adminsContainer = document.getElementById('admins-list-container');
                 if (adminsContainer) {
                     adminsContainer.innerHTML = admins.map(admin => {
@@ -464,82 +1136,91 @@
                         const email = escapeHtml(admin.email);
                         const initial = (name[0] || 'A').toUpperCase();
                         const avatarHtml = admin.photoURL
-                            ? `<img src="${escapeHtml(admin.photoURL)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`
+                            ? `<img src="${escapeHtml(admin.photoURL)}" alt="" style="width:100%;height:100%;object-fit:cover;">`
                             : initial;
-                        const coreBadge = auth.isCoreAdminEmail(admin.email)
-                            ? '<span class="role-badge admin-role" style="font-size:0.68rem;">Главный Админ</span>'
-                            : '<span class="role-badge admin-role" style="font-size:0.68rem;">👑 Админ</span>';
+                        const badge = isCoreAdminEmail(admin.email)
+                            ? `<span class="badge-pill badge-admin">👑 Главный Админ</span>`
+                            : `<span class="badge-pill badge-admin">👑 Админ</span>`;
+
+                        const revokeBtn = viewerIsAdmin
+                            ? `<button type="button" class="user-action-btn revoke-admin-btn" data-action="revoke-admin" data-email="${email}" title="Забрать права администратора">
+                                   🚫 Забрать админку
+                               </button>`
+                            : '';
 
                         return `
                             <div class="user-db-row is-admin-row">
                                 <div class="user-db-main">
                                     <div class="user-db-avatar">${avatarHtml}</div>
                                     <div class="user-db-info">
-                                        <div class="user-db-name">${name} ${coreBadge}</div>
+                                        <div class="user-db-name">${name} ${badge}</div>
                                         <div class="user-db-email">${email}</div>
                                     </div>
                                 </div>
+                                ${revokeBtn ? `<div class="user-db-actions">${revokeBtn}</div>` : ''}
                             </div>
                         `;
                     }).join('');
                 }
 
-                // Filter & Search All Users
+                // Render All Users Filtered List
                 const listContainer = document.getElementById('all-users-list-container');
                 if (!listContainer) return;
 
-                const filtered = users.filter(u => {
-                    const isAdm = u.role === 'admin' || auth.isCoreAdminEmail(u.email);
+                const filtered = usersDb.filter(u => {
+                    const isAdm = isUserRecordAdmin(u);
                     if (currentFilter === 'admin' && !isAdm) return false;
                     if (currentFilter === 'student' && isAdm) return false;
                     if (currentFilter === 'google' && !isGoogleAccount(u)) return false;
 
                     if (searchQuery) {
                         const q = searchQuery.toLowerCase();
-                        const matchName = (u.displayName || '').toLowerCase().includes(q);
-                        const matchEmail = (u.email || '').toLowerCase().includes(q);
+                        const matchName = String(u.displayName || '').toLowerCase().includes(q);
+                        const matchEmail = String(u.email || '').toLowerCase().includes(q);
                         return matchName || matchEmail;
                     }
                     return true;
                 });
 
                 if (!filtered.length) {
-                    listContainer.innerHTML = `<div style="text-align:center; padding:28px; color:#94a3b8;">Пользователи не найдены</div>`;
+                    listContainer.innerHTML = `<div style="text-align:center; padding:28px; color:#94a3b8;">Пользователи по вашему запросу не найдены</div>`;
                     return;
                 }
 
                 listContainer.innerHTML = filtered.map(u => {
-                    const isAdm = u.role === 'admin' || auth.isCoreAdminEmail(u.email);
-                    const isCore = auth.isCoreAdminEmail(u.email);
+                    const isAdm = isUserRecordAdmin(u);
                     const isGoog = isGoogleAccount(u);
                     const name = escapeHtml(u.displayName || u.email.split('@')[0]);
                     const email = escapeHtml(u.email);
                     const initial = (name[0] || 'U').toUpperCase();
                     const avatarHtml = u.photoURL
-                        ? `<img src="${escapeHtml(u.photoURL)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`
+                        ? `<img src="${escapeHtml(u.photoURL)}" alt="" style="width:100%;height:100%;object-fit:cover;">`
                         : initial;
 
                     const roleBadge = isAdm
-                        ? `<span class="role-badge admin-role">👑 Админ</span>`
-                        : `<span class="role-badge student-role">🎓 Ученик</span>`;
+                        ? `<span class="badge-pill badge-admin">👑 Админ</span>`
+                        : `<span class="badge-pill badge-student">🎓 Ученик</span>`;
 
                     const providerBadge = isGoog
-                        ? `<span style="font-size:0.7rem; padding:2px 8px; border-radius:99px; background:rgba(59,130,246,0.16); color:#93c5fd; border:1px solid rgba(59,130,246,0.35);">🌐 Google Аккаунт</span>`
-                        : `<span style="font-size:0.7rem; padding:2px 8px; border-radius:99px; background:rgba(16,185,129,0.14); color:#6ee7b7; border:1px solid rgba(16,185,129,0.3);">🔥 Firebase Сайт</span>`;
+                        ? `<span class="badge-pill badge-google">🌐 Google Аккаунт</span>`
+                        : `<span class="badge-pill badge-site">🔥 Сайт / Firebase</span>`;
 
-                    const toggleRoleBtn = isCore
-                        ? `<span style="font-size:0.74rem; color:#fbbf24; opacity:0.85;">🔒 Системный админ</span>`
-                        : `<button type="button" class="user-action-btn promote-btn" data-action="toggle-role" data-email="${email}">
-                               ${isAdm ? '🎓 Сделать учеником' : '👑 Сделать админом'}
-                           </button>`;
+                    // Admin-Only Action Buttons vs Protected Read-Only Badge
+                    let actionsHtml = '';
+                    if (viewerIsAdmin) {
+                        const roleToggleBtn = isAdm
+                            ? `<button type="button" class="user-action-btn revoke-admin-btn" data-action="revoke-admin" data-email="${email}">
+                                   🚫 Забрать админку
+                               </button>`
+                            : `<button type="button" class="user-action-btn grant-admin-btn" data-action="grant-admin" data-email="${email}">
+                                   👑 Выдать админку
+                               </button>`;
 
-                    const loginAsBtn = `<button type="button" class="user-action-btn" data-action="quick-login" data-email="${email}">
-                        🔑 Войти
-                    </button>`;
-
-                    const deleteBtn = isCore
-                        ? ''
-                        : `<button type="button" class="user-action-btn delete-btn" data-action="delete-user" data-email="${email}" title="Удалить из базы">🗑️</button>`;
+                        const deleteBtn = `<button type="button" class="user-action-btn delete-btn" data-action="delete-user" data-email="${email}" title="Удалить из базы">🗑️</button>`;
+                        actionsHtml = `${roleToggleBtn} ${deleteBtn}`;
+                    } else {
+                        actionsHtml = `<span style="font-size:0.75rem; color:#64748b;">🔒 Защищено</span>`;
+                    }
 
                     return `
                         <div class="user-db-row ${isAdm ? 'is-admin-row' : ''}">
@@ -555,22 +1236,39 @@
                                 </div>
                             </div>
                             <div class="user-db-actions">
-                                ${loginAsBtn}
-                                ${toggleRoleBtn}
-                                ${deleteBtn}
+                                ${actionsHtml}
                             </div>
                         </div>
                     `;
                 }).join('');
             }
 
-            // Listen for live DB updates
-            window.onUsersDbUpdated = () => renderDirectory();
+            async function triggerGoogleLogin() {
+                if (!authInstance) return;
+                try {
+                    const provider = new firebase.auth.GoogleAuthProvider();
+                    const res = await authInstance.signInWithPopup(provider);
+                    if (res && res.user) {
+                        const rec = upsertUser({
+                            uid: res.user.uid,
+                            email: res.user.email,
+                            displayName: res.user.displayName || res.user.email.split('@')[0],
+                            photoURL: res.user.photoURL || '',
+                            provider: 'google'
+                        }, true);
+                        setSession(rec);
+                    }
+                } catch (err) {
+                    alert('Ошибка входа через Google: ' + err.message);
+                }
+            }
 
             document.addEventListener('DOMContentLoaded', () => {
+                loadLocal();
                 renderDirectory();
+                initFirebaseConnection();
 
-                // Filter buttons
+                // Filter tabs
                 document.querySelectorAll('.users-filter-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
                         document.querySelectorAll('.users-filter-btn').forEach(b => b.classList.remove('active'));
@@ -581,26 +1279,37 @@
                 });
 
                 // Search input
-                const searchInput = document.getElementById('users-search-box');
-                if (searchInput) {
-                    searchInput.addEventListener('input', (e) => {
+                const searchBox = document.getElementById('users-search-box');
+                if (searchBox) {
+                    searchBox.addEventListener('input', (e) => {
                         searchQuery = e.target.value.trim();
                         renderDirectory();
                     });
                 }
 
-                // Google Sign-In button on users.html
+                // Google Sign-In Buttons
                 const googleBtn = document.getElementById('users-page-google-btn');
-                if (googleBtn) {
-                    googleBtn.addEventListener('click', async () => {
-                        if (window.authManager) {
-                            await window.authManager.loginWithGoogle();
-                            renderDirectory();
+                if (googleBtn) googleBtn.addEventListener('click', triggerGoogleLogin);
+                const bannerGoogleBtn = document.getElementById('banner-google-admin-btn');
+                if (bannerGoogleBtn) bannerGoogleBtn.addEventListener('click', triggerGoogleLogin);
+
+                // Quick Grant Admin by Email/Nickname (Admin-only)
+                const quickGrantBtn = document.getElementById('quick-grant-admin-btn');
+                const quickGrantInput = document.getElementById('quick-grant-email-input');
+                if (quickGrantBtn && quickGrantInput) {
+                    quickGrantBtn.addEventListener('click', () => {
+                        if (!isCurrentUserVerifiedAdmin()) {
+                            alert('⛔ Доступ запрещён! Только Администратор может выдавать админки.');
+                            return;
                         }
+                        const val = quickGrantInput.value.trim();
+                        if (!val) return;
+                        setRoleForUser(val, 'admin');
+                        quickGrantInput.value = '';
                     });
                 }
 
-                // Quick Registration Form (connects to Firebase Auth + Firestore)
+                // Quick Registration Form
                 const regForm = document.getElementById('quick-db-register-form');
                 if (regForm) {
                     regForm.addEventListener('submit', async (e) => {
@@ -608,76 +1317,90 @@
                         const name = document.getElementById('db-reg-name').value.trim();
                         const login = document.getElementById('db-reg-login').value.trim();
                         const password = document.getElementById('db-reg-password').value;
-                        const role = document.getElementById('db-reg-role').value;
-
+                        const requestedRole = document.getElementById('db-reg-role').value;
                         if (!login) return;
-                        await window.authManager.registerWithEmail(login, password, name);
-                        const record = window.authManager.upsertUserRecord({
+
+                        // Non-admins can NEVER register an admin account!
+                        const safeRole = isCurrentUserVerifiedAdmin() ? requestedRole : 'student';
+
+                        let fbUid = null;
+                        if (authInstance && window.location.protocol !== 'file:') {
+                            const fbEmail = login.includes('@')
+                                ? login.toLowerCase()
+                                : `${login.replace(/[^a-z0-9._-]/gi, '_').toLowerCase()}@curie-site.app`;
+                            const fbPass = password.length >= 6 ? password : `curie_${password}_key`;
+                            try {
+                                const res = await authInstance.createUserWithEmailAndPassword(fbEmail, fbPass);
+                                if (res && res.user) {
+                                    fbUid = res.user.uid;
+                                    await res.user.updateProfile({ displayName: name }).catch(() => {});
+                                }
+                            } catch (err) {
+                                try {
+                                    const sRes = await authInstance.signInWithEmailAndPassword(fbEmail, fbPass);
+                                    if (sRes && sRes.user) fbUid = sRes.user.uid;
+                                } catch (e2) {}
+                            }
+                        }
+
+                        const rec = upsertUser({
+                            uid: fbUid,
                             email: login,
                             displayName: name || login.split('@')[0],
                             password: password,
-                            role: role,
+                            role: safeRole,
                             provider: login.toLowerCase().includes('@gmail.com') ? 'google' : 'firebase'
-                        });
-                        window.authManager.setActiveSession(record);
+                        }, true);
 
+                        // Only switch session if visitor was not already an admin adding someone else
+                        if (!isCurrentUserVerifiedAdmin()) {
+                            setSession(rec);
+                        }
                         regForm.reset();
+
                         const statusBox = document.getElementById('db-reg-status');
                         if (statusBox) {
                             statusBox.style.display = 'block';
-                            statusBox.innerHTML = `✅ Пользователь <strong>${escapeHtml(record.displayName)}</strong> добавлен в Firebase и выполнен вход!`;
-                        }
-                        renderDirectory();
-                    });
-                }
-
-                // Action buttons (Toggle Role, Quick Login, Delete)
-                const allContainer = document.getElementById('all-users-list-container');
-                if (allContainer) {
-                    allContainer.addEventListener('click', (e) => {
-                        const btn = e.target.closest('button[data-action]');
-                        if (!btn) return;
-                        const action = btn.getAttribute('data-action');
-                        const email = btn.getAttribute('data-email');
-                        const auth = window.authManager;
-                        if (!auth || !email) return;
-
-                        const user = auth.findUserByLogin(email);
-                        if (!user) return;
-
-                        if (action === 'toggle-role') {
-                            user.role = user.role === 'admin' ? 'student' : 'admin';
-                            user.roleUpdatedAt = Date.now();
-                            auth.broadcastUserToBridge(user);
-                            auth.syncUsersToCloud();
-                            if (auth.currentUser && auth.currentUser.email.toLowerCase() === user.email.toLowerCase()) {
-                                auth.setActiveSession(user);
-                            }
-                            renderDirectory();
-                        } else if (action === 'quick-login') {
-                            if (user.password) {
-                                const entered = prompt(`Введите пароль для входа в аккаунт "${user.displayName}" (${user.email}):`);
-                                if (entered === null) return;
-                                if (entered !== user.password) {
-                                    alert('❌ Неверный пароль!');
-                                    return;
-                                }
-                            }
-                            auth.setActiveSession(user);
-                            renderDirectory();
-                        } else if (action === 'delete-user') {
-                            if (confirm(`Удалить пользователя "${user.displayName}" (${user.email}) из базы сайта?`)) {
-                                const cleanDel = user.email.toLowerCase().trim();
-                                if (!auth.deletedUserEmails.includes(cleanDel)) {
-                                    auth.deletedUserEmails.push(cleanDel);
-                                }
-                                auth.usersDb = auth.usersDb.filter(u => u.email.toLowerCase().trim() !== cleanDel);
-                                auth.syncUsersToCloud(true);
-                                renderDirectory();
-                            }
+                            statusBox.innerHTML = `✅ Пользователь <strong>${escapeHtml(rec.displayName)}</strong> (${safeRole === 'admin' ? '👑 Админ' : '🎓 Ученик'}) сохранён в Firebase!`;
                         }
                     });
                 }
+
+                // Handle Grant/Revoke Admin & Delete clicks in both Admins Showcase and All Users List
+                document.body.addEventListener('click', (e) => {
+                    const btn = e.target.closest('button[data-action]');
+                    if (!btn) return;
+                    const action = btn.getAttribute('data-action');
+                    const email = btn.getAttribute('data-email');
+                    if (!email) return;
+
+                    // STRICT ADMIN GUARD
+                    if (!isCurrentUserVerifiedAdmin()) {
+                        alert('⛔ Защита: Только Администратор может управлять ролями и базой пользователей!');
+                        return;
+                    }
+
+                    const target = usersDb.find(u => String(u.email || '').toLowerCase().trim() === email.toLowerCase().trim());
+                    if (!target) return;
+
+                    if (action === 'grant-admin') {
+                        setRoleForUser(target.email, 'admin');
+                    } else if (action === 'revoke-admin') {
+                        const isSelf = currentUser && String(currentUser.email || '').toLowerCase().trim() === String(target.email).toLowerCase().trim();
+                        if (isSelf && !confirm('Вы уверены, что хотите забрать админку у самого себя?')) {
+                            return;
+                        }
+                        setRoleForUser(target.email, 'student');
+                    } else if (action === 'delete-user') {
+                        if (confirm(`Удалить пользователя "${target.displayName}" (${target.email}) из базы?`)) {
+                            const cleanDel = target.email.toLowerCase().trim();
+                            if (!deletedEmails.includes(cleanDel)) deletedEmails.push(cleanDel);
+                            usersDb = usersDb.filter(u => String(u.email || '').toLowerCase().trim() !== cleanDel);
+                            syncToFirestore(true);
+                            renderDirectory();
+                        }
+                    }
+                });
             });
         })();
     </script>

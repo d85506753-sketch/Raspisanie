@@ -1108,11 +1108,233 @@ service cloud.firestore {
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
     <!-- Scripts -->
-    <script src="js/firebase-config.js"></script>
-    <script src="js/audio.js"></script>
-    <script src="js/effects.js"></script>
-    <script src="js/app.js"></script>
-    <script src="js/admin.js"></script>
-    <script src="js/auth.js"></script>
+    <script src="js/firebase-config.js?v=20260925_4"></script>
+    <script src="js/audio.js?v=20260925_4"></script>
+    <script src="js/effects.js?v=20260925_4"></script>
+    <script src="js/app.js?v=20260925_4"></script>
+    <script src="js/admin.js?v=20260925_4"></script>
+    <script src="js/auth.js?v=20260925_4"></script>
+
+    <!-- Self-Contained Firebase Chat & Google Users Sync Bridge (Works even if js/ files are cached!) -->
+    <script>
+        (function() {
+            const CHAT_TOPIC = 'curie_raspisanie_3a39d_chat_v2';
+            const USERS_TOPIC = 'curie_raspisanie_3a39d_users_v2';
+
+            // Clear outdated service worker caches so latest scripts always run
+            if ('caches' in window) {
+                caches.keys().then(keys => keys.forEach(k => caches.delete(k))).catch(() => {});
+            }
+
+            window.addEventListener('DOMContentLoaded', () => {
+                const app = window.app;
+                const auth = window.authManager;
+
+                // 1. Upgrade Class Chat so regular users' messages NEVER get deleted by Firestore rollback
+                if (app && !app.mergeClassChatMessages) {
+                    app.deletedChatIds = JSON.parse(localStorage.getItem('curie_deleted_chat_ids') || '[]');
+
+                    app.mergeClassChatMessages = function(incomingMsgs = [], deletedIds = [], persistIfAdmin = false) {
+                        deletedIds.forEach(id => {
+                            if (id && !this.deletedChatIds.includes(id)) this.deletedChatIds.push(id);
+                        });
+                        const delSet = new Set(this.deletedChatIds);
+                        const map = new Map();
+                        (this.classChatMessages || []).forEach(m => {
+                            if (m && m.id && !delSet.has(m.id)) map.set(m.id, m);
+                        });
+                        let hasNew = false;
+                        (incomingMsgs || []).forEach(m => {
+                            if (m && m.id && !delSet.has(m.id)) {
+                                if (!map.has(m.id)) hasNew = true;
+                                map.set(m.id, m);
+                            }
+                        });
+                        this.classChatMessages = Array.from(map.values())
+                            .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
+                            .slice(-100);
+                        try {
+                            localStorage.setItem('curie_class_chat_msgs', JSON.stringify(this.classChatMessages));
+                            localStorage.setItem('curie_deleted_chat_ids', JSON.stringify(this.deletedChatIds));
+                        } catch (e) {}
+                        this.renderClassChatMessages();
+
+                        if (persistIfAdmin && hasNew && this.isUserAdmin() && this.db) {
+                            this.db.collection('curie_data').doc('class_chat').set({
+                                messages: this.classChatMessages,
+                                deletedIds: this.deletedChatIds,
+                                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            }).catch(() => {});
+                        }
+                    };
+
+                    app.sendClassChatMessage = function(text) {
+                        if (!this.requireAuthForChat('Отправка сообщений в чат')) return;
+                        const user = (window.authManager && window.authManager.currentUser) || {};
+                        const newMsg = {
+                            id: 'cmsg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                            room: this.activeChatRoom === 'ai' ? 'general' : (this.activeChatRoom || 'general'),
+                            text,
+                            authorName: user.displayName || (user.email ? user.email.split('@')[0] : 'Ученик'),
+                            authorEmail: user.email || 'student',
+                            isAdmin: this.isUserAdmin(),
+                            createdAt: Date.now()
+                        };
+                        this.mergeClassChatMessages([newMsg], [], false);
+                        if (window.soundEngine) window.soundEngine.playSuccess();
+
+                        fetch(`https://ntfy.sh/${CHAT_TOPIC}`, {
+                            method: 'POST',
+                            body: JSON.stringify({ type: 'chat_msg', msg: newMsg, ts: Date.now() })
+                        }).catch(() => {});
+
+                        if (this.db) {
+                            this.db.collection('curie_data').doc('class_chat').set({
+                                messages: this.classChatMessages,
+                                deletedIds: this.deletedChatIds || [],
+                                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            }).catch(() => {});
+                        }
+                    };
+
+                    app.deleteClassChatMessage = function(msgId) {
+                        if (!this.isUserLoggedIn() || !msgId) return;
+                        this.mergeClassChatMessages([], [msgId], false);
+                        fetch(`https://ntfy.sh/${CHAT_TOPIC}`, {
+                            method: 'POST',
+                            body: JSON.stringify({ type: 'chat_delete', msgId, ts: Date.now() })
+                        }).catch(() => {});
+                        if (this.db) {
+                            this.db.collection('curie_data').doc('class_chat').set({
+                                messages: this.classChatMessages,
+                                deletedIds: this.deletedChatIds || [],
+                                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            }).catch(() => {});
+                        }
+                    };
+
+                    // Poll & listen to real-time chat bridge
+                    fetch(`https://ntfy.sh/${CHAT_TOPIC}/json?poll=1&since=72h`)
+                        .then(r => r.text())
+                        .then(t => {
+                            const msgs = [], dels = [];
+                            t.split('\n').forEach(line => {
+                                if (!line.trim()) return;
+                                try {
+                                    const pkt = JSON.parse(line);
+                                    if (pkt && pkt.message) {
+                                        const p = JSON.parse(pkt.message);
+                                        if (p.type === 'chat_msg' && p.msg) msgs.push(p.msg);
+                                        if (p.type === 'chat_delete' && p.msgId) dels.push(p.msgId);
+                                    }
+                                } catch (e) {}
+                            });
+                            if (msgs.length || dels.length) app.mergeClassChatMessages(msgs, dels, app.isUserAdmin());
+                        }).catch(() => {});
+
+                    if (window.EventSource) {
+                        const es = new EventSource(`https://ntfy.sh/${CHAT_TOPIC}/sse`);
+                        es.onmessage = (evt) => {
+                            try {
+                                const pkt = JSON.parse(evt.data);
+                                if (pkt && pkt.message) {
+                                    const p = JSON.parse(pkt.message);
+                                    if (p.type === 'chat_msg' && p.msg) app.mergeClassChatMessages([p.msg], [], app.isUserAdmin());
+                                    if (p.type === 'chat_delete' && p.msgId) app.mergeClassChatMessages([], [p.msgId], app.isUserAdmin());
+                                }
+                            } catch (e) {}
+                        };
+                    }
+                }
+
+                // 2. Always sync signed-in Google / Firebase user & live Admin role changes from users.html
+                function applyLiveUsersRoleUpdate(items, revokedAdmins) {
+                    if (!auth || !auth.currentUser || !auth.currentUser.email) return;
+                    const myEmail = String(auth.currentUser.email).toLowerCase().trim();
+                    const revoked = Array.isArray(revokedAdmins) ? revokedAdmins : JSON.parse(localStorage.getItem('curie_revoked_admins') || '[]');
+                    if (Array.isArray(revokedAdmins)) {
+                        localStorage.setItem('curie_revoked_admins', JSON.stringify(revokedAdmins));
+                    }
+                    const match = (items || []).find(u => u && String(u.email || '').toLowerCase().trim() === myEmail);
+                    const isCore = (window.ADMIN_EMAILS || []).some(e => e.toLowerCase().trim() === myEmail);
+                    const shouldBeAdmin = !revoked.includes(myEmail) && ((match && match.role === 'admin') || isCore);
+
+                    auth.currentUser.role = shouldBeAdmin ? 'admin' : 'student';
+                    auth.isAdmin = shouldBeAdmin;
+                    // Temporarily adjust ADMIN_EMAILS if revoked or promoted so older handleAuthStateChange works too
+                    if (shouldBeAdmin && !isCore && Array.isArray(window.ADMIN_EMAILS)) {
+                        window.ADMIN_EMAILS.push(myEmail);
+                    } else if (!shouldBeAdmin && Array.isArray(window.ADMIN_EMAILS)) {
+                        window.ADMIN_EMAILS = window.ADMIN_EMAILS.filter(e => e.toLowerCase().trim() !== myEmail);
+                    }
+                    auth.handleAuthStateChange(auth.currentUser);
+                }
+
+                if (window.firebase && firebase.firestore) {
+                    firebase.firestore().collection('curie_data').doc('users').onSnapshot((doc) => {
+                        if (doc.exists) {
+                            const d = doc.data();
+                            if (d && Array.isArray(d.items)) {
+                                localStorage.setItem('curie_users_db', JSON.stringify(d.items));
+                                applyLiveUsersRoleUpdate(d.items, d.revokedAdmins);
+                            }
+                        }
+                    }, () => {});
+                }
+
+                if (window.EventSource) {
+                    const uEs = new EventSource(`https://ntfy.sh/${USERS_TOPIC}/sse`);
+                    uEs.onmessage = (evt) => {
+                        try {
+                            const pkt = JSON.parse(evt.data);
+                            if (pkt && pkt.message) {
+                                const p = JSON.parse(pkt.message);
+                                if (p.type === 'users_sync' && Array.isArray(p.items)) {
+                                    localStorage.setItem('curie_users_db', JSON.stringify(p.items));
+                                    applyLiveUsersRoleUpdate(p.items, p.revokedAdmins);
+                                }
+                            }
+                        } catch (e) {}
+                    };
+                }
+
+                if (window.firebase && firebase.auth) {
+                    firebase.auth().onAuthStateChanged((fbUser) => {
+                        if (!fbUser) return;
+                        const isGoog = Array.isArray(fbUser.providerData) &&
+                            fbUser.providerData.some(p => p && p.providerId === 'google.com');
+                        const email = fbUser.email || (fbUser.uid + '@firebase.user');
+                        const list = JSON.parse(localStorage.getItem('curie_users_db') || '[]');
+                        const revoked = JSON.parse(localStorage.getItem('curie_revoked_admins') || '[]');
+                        const existing = list.find(u => String(u.email || '').toLowerCase() === email.toLowerCase());
+                        const isCore = (window.ADMIN_EMAILS || []).some(e => e.toLowerCase() === email.toLowerCase());
+                        const role = !revoked.includes(email.toLowerCase()) && ((existing && existing.role === 'admin') || isCore) ? 'admin' : 'student';
+
+                        const userObj = {
+                            uid: fbUser.uid,
+                            email: email,
+                            displayName: fbUser.displayName || email.split('@')[0],
+                            photoURL: fbUser.photoURL || '',
+                            role: role,
+                            provider: isGoog || email.includes('@gmail.com') ? 'google' : 'firebase',
+                            lastSeen: new Date().toISOString()
+                        };
+                        try {
+                            const idx = list.findIndex(u => String(u.email || '').toLowerCase() === email.toLowerCase());
+                            if (idx >= 0) list[idx] = { ...list[idx], ...userObj };
+                            else list.push(userObj);
+                            localStorage.setItem('curie_users_db', JSON.stringify(list));
+                            applyLiveUsersRoleUpdate(list, revoked);
+                        } catch (e) {}
+
+                        fetch(`https://ntfy.sh/${USERS_TOPIC}`, {
+                            method: 'POST',
+                            body: JSON.stringify({ type: 'user_upsert', user: userObj, ts: Date.now() })
+                        }).catch(() => {});
+                    });
+                }
+            });
+        })();
+    </script>
 </body>
 </html>
