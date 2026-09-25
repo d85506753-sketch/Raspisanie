@@ -33,6 +33,9 @@
                 <button class="cool-btn chat-header-btn" id="open-class-chat-btn" title="Открыть чаты класса и ИИ (доступно после регистрации)">
                     💬 Чаты <span class="chat-reg-pill" id="header-chat-lock-pill">🔒</span>
                 </button>
+                <a href="users.html" class="cool-btn" id="header-users-link" style="text-decoration: none;" title="Открыть страницу всех пользователей и админов">
+                    👥 Участники
+                </a>
                 <button class="cool-btn primary offline-download-btn" id="download-offline-btn" title="Скачать автономный файл с расписанием, ДЗ и чатами DeepSeek / Алиса на телефон">
                     📲 Скачать офлайн
                 </button>
@@ -50,8 +53,8 @@
                 </button>
                 
                 <!-- Account Auth / Profile Badge -->
-                <button class="cool-btn" id="header-auth-btn" title="Войти в аккаунт Firebase">
-                    👤 Войти
+                <button class="cool-btn" id="header-auth-btn" title="Быстрая регистрация и вход на сайте">
+                    👤 Войти / Регистрация
                 </button>
                 <div id="header-user-badge" class="header-user-badge" style="display: none;">
                     <div id="user-avatar" class="user-avatar">U</div>
@@ -76,6 +79,9 @@
                 <button type="button" id="chip-open-chats-btn" class="ai-chip chip-class-chat" title="Открыть чат класса и чаты решений (только с регистрации)">
                     <span class="chip-icon">💬</span> Чаты класса & ИИ
                 </button>
+                <a href="users.html" class="ai-chip" style="border-color: rgba(163, 113, 247, 0.45); color: #d2a8ff; background: rgba(163, 113, 247, 0.1);" title="База всех пользователей и админов сайта">
+                    <span class="chip-icon">👥</span> Все пользователи и Админы
+                </a>
                 <a href="https://chat.deepseek.com" target="_blank" rel="noopener noreferrer" onclick="return window.app ? window.app.handleProtectedChatLink(event, 'https://chat.deepseek.com', 'DeepSeek AI') : true;" class="ai-chip chip-deepseek" title="DeepSeek AI — Решение сложных задач и сочинений (доступно после регистрации)">
                     <span class="chip-icon">🧠</span> DeepSeek AI
                 </a>
@@ -290,10 +296,13 @@
                     </div>
                 </div>
 
-                <!-- 4. Other Tools (Cloud, Share, Sound) -->
+                <!-- 4. Other Tools (Users DB, Cloud, Share, Sound) -->
                 <div class="mob-hub-card">
-                    <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 10px;">🛠️ Инструменты</h4>
+                    <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 10px;">🛠️ База пользователей и Инструменты</h4>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <a href="users.html" class="cool-btn primary" style="justify-content: center; padding: 11px; grid-column: 1 / -1; text-decoration: none; background: #8957e5; border-color: #a371f7;">
+                            👥 Все пользователи и Админы (База сайта)
+                        </a>
                         <button type="button" class="cool-btn" id="mob-hub-cloud-btn" style="justify-content: center; padding: 10px;">
                             ☁️ Облако Базы
                         </button>
@@ -476,16 +485,15 @@
                         <pre style="background: #0d1117; padding: 10px; border-radius: 6px; font-size: 0.78rem; overflow-x: auto; color: #58a6ff; border: 1px solid #30363d;" id="firestore-rules-snippet">rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    match /curie_data/users {
+      allow read, write: if true;
+    }
     match /curie_data/class_chat {
-      allow read, write: if request.auth != null;
+      allow read, write: if true;
     }
     match /{document=**} {
       allow read: if true;
-      allow write: if request.auth != null && (
-        request.auth.token.email == 'roganinstepan36@gmail.com' ||
-        request.auth.token.email == 'steamvichsteam@gmail.com' ||
-        request.auth.token.email == 'm69227503@gmail.com'
-      );
+      allow write: if true;
     }
   }
 }</pre>
@@ -711,15 +719,15 @@ service cloud.firestore {
         </div>
     </div>
 
-    <!-- Auth Modal (Firebase Login / Register) -->
+    <!-- Auth Modal (Simple Site Registration & Firebase Login) -->
     <div id="auth-modal" class="modal-backdrop">
         <div class="modal-window" style="max-width: 420px;">
             <div class="modal-header">
-                <h3 style="font-weight: 700; font-size: 1.2rem;">🔐 Вход в аккаунт</h3>
+                <h3 style="font-weight: 700; font-size: 1.2rem;">🔐 Быстрый Вход / Регистрация</h3>
                 <button class="modal-close-btn" id="close-auth-modal">&times;</button>
             </div>
             
-            <div class="auth-tabs-row" style="display: flex; gap: 8px; margin-bottom: 20px;">
+            <div class="auth-tabs-row" style="display: flex; gap: 8px; margin-bottom: 16px;">
                 <button type="button" class="cool-btn active" id="tab-login-btn" style="flex: 1; justify-content: center;">Войти</button>
                 <button type="button" class="cool-btn" id="tab-register-btn" style="flex: 1; justify-content: center;">Регистрация</button>
             </div>
@@ -727,14 +735,14 @@ service cloud.firestore {
             <!-- Login Form -->
             <form id="auth-login-form">
                 <div class="form-group">
-                    <label>Email:</label>
-                    <input type="email" id="login-email" class="form-input" placeholder="student@example.com" required>
+                    <label>Логин или Email:</label>
+                    <input type="text" id="login-email" class="form-input" placeholder="Например: ivan_9a или email@gmail.com" required>
                 </div>
                 <div class="form-group">
                     <label>Пароль:</label>
-                    <input type="password" id="login-password" class="form-input" placeholder="••••••••" required>
+                    <input type="password" id="login-password" class="form-input" placeholder="Введите пароль" required>
                 </div>
-                <button type="submit" class="cool-btn primary" style="width: 100%; margin-top: 10px; justify-content: center;">Войти в аккаунт</button>
+                <button type="submit" class="cool-btn primary" style="width: 100%; margin-top: 10px; justify-content: center; padding: 11px;">Войти на сайт</button>
             </form>
 
             <!-- Register Form -->
@@ -744,17 +752,17 @@ service cloud.firestore {
                     <input type="text" id="reg-name" class="form-input" placeholder="Иван Иванов" required>
                 </div>
                 <div class="form-group">
-                    <label>Email:</label>
-                    <input type="email" id="reg-email" class="form-input" placeholder="student@example.com" required>
+                    <label>Придумайте Логин или укажите Email:</label>
+                    <input type="text" id="reg-email" class="form-input" placeholder="Например: ivan_9a или email@gmail.com" required>
                 </div>
                 <div class="form-group">
-                    <label>Пароль:</label>
-                    <input type="password" id="reg-password" class="form-input" placeholder="••••••••" required>
+                    <label>Придумайте пароль:</label>
+                    <input type="password" id="reg-password" class="form-input" placeholder="Любой пароль" required>
                 </div>
-                <button type="submit" class="cool-btn primary" style="width: 100%; margin-top: 10px; justify-content: center;">Зарегистрироваться</button>
+                <button type="submit" class="cool-btn primary" style="width: 100%; margin-top: 10px; justify-content: center; padding: 11px;">Зарегистрироваться за 1 клик</button>
             </form>
 
-            <div style="margin: 20px 0; display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 0.8rem;">
+            <div style="margin: 16px 0; display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 0.8rem;">
                 <div style="flex: 1; height: 1px; background: var(--border-color);"></div>
                 <span>ИЛИ</span>
                 <div style="flex: 1; height: 1px; background: var(--border-color);"></div>
@@ -764,6 +772,10 @@ service cloud.firestore {
                 <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.27 21.43 7.35 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.27 2.57 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/></svg>
                 Войти через Google
             </button>
+
+            <a href="users.html" style="display: block; text-align: center; margin-top: 14px; font-size: 0.82rem; color: #58a6ff; text-decoration: none; font-weight: 600;">
+                👥 Открыть страницу всех пользователей и админов →
+            </a>
         </div>
     </div>
 

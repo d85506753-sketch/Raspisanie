@@ -1599,6 +1599,7 @@ body.disco-party-mode {
 
     /* Hide desktop header buttons on mobile — they live in the "Кабинет" & "Чаты" tabs! */
     #open-class-chat-btn,
+    #header-users-link,
     #toggle-sound-btn,
     #share-link-btn,
     #cloud-sync-btn,

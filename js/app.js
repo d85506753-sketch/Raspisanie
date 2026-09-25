@@ -153,7 +153,10 @@ class AppManager {
 
         // Registration-Only Class & AI Chats
         this.classChatMessages = [];
+        this.deletedChatIds = [];
         this.activeChatRoom = 'general';
+        this.chatRelayTopic = 'curie_raspisanie_3a39d_chat_v2';
+        this.chatRelayEvtSource = null;
 
         // Cloud Firestore Synchronization
         this.db = null;
@@ -195,6 +198,7 @@ class AppManager {
         this.checkActiveAdminChat();
         this.setupCrossTabChatSync();
         this.initFirestore();
+        this.initClassChatRealtimeBridge();
         this.setupMobileBottomNav();
         this.setupMobileSwipeGestures();
         this.syncClassChatAuthUI();
@@ -302,16 +306,12 @@ class AppManager {
             console.warn('Firestore abuse listener notice:', err);
         });
 
-        // 5. Real-time Registered Class Chat Messages
+        // 5. Real-time Registered Class Chat Messages (Non-destructive Merge!)
         this.db.collection('curie_data').doc('class_chat').onSnapshot((doc) => {
             if (doc.exists) {
                 const data = doc.data();
                 if (data && Array.isArray(data.messages)) {
-                    this.classChatMessages = data.messages;
-                    try {
-                        localStorage.setItem('curie_class_chat_msgs', JSON.stringify(this.classChatMessages));
-                    } catch (e) {}
-                    this.renderClassChatMessages();
+                    this.mergeClassChatMessages(data.messages, data.deletedIds || [], false);
                 }
             }
         }, (err) => {
@@ -595,6 +595,10 @@ class AppManager {
             if (this.bannerAnnouncement) {
                 this.showAnnouncement(this.bannerAnnouncement, false);
             }
+
+            const savedDeletedChat = localStorage.getItem('curie_deleted_chat_ids');
+            this.deletedChatIds = savedDeletedChat ? JSON.parse(savedDeletedChat) : [];
+            if (!Array.isArray(this.deletedChatIds)) this.deletedChatIds = [];
 
             const savedChatMsgs = localStorage.getItem('curie_class_chat_msgs');
             if (savedChatMsgs) {
@@ -2447,6 +2451,122 @@ class AppManager {
         listEl.innerHTML = html;
     }
 
+    initClassChatRealtimeBridge() {
+        const pollUrl = `https://ntfy.sh/${this.chatRelayTopic}/json?poll=1&since=72h`;
+        fetch(pollUrl)
+            .then(r => r.text())
+            .then(text => {
+                const incomingMsgs = [];
+                const incomingDeleted = [];
+                text.split('\n').forEach(line => {
+                    if (!line.trim()) return;
+                    try {
+                        const pkt = JSON.parse(line);
+                        if (pkt && pkt.event === 'message' && pkt.message) {
+                            const payload = JSON.parse(pkt.message);
+                            if (payload && payload.type === 'chat_msg' && payload.msg) {
+                                incomingMsgs.push(payload.msg);
+                            } else if (payload && payload.type === 'chat_delete' && payload.msgId) {
+                                incomingDeleted.push(payload.msgId);
+                            }
+                        }
+                    } catch (e) {}
+                });
+                if (incomingMsgs.length > 0 || incomingDeleted.length > 0) {
+                    this.mergeClassChatMessages(incomingMsgs, incomingDeleted, this.isUserAdmin());
+                }
+            })
+            .catch(() => {});
+
+        try {
+            if (window.EventSource) {
+                this.chatRelayEvtSource = new EventSource(`https://ntfy.sh/${this.chatRelayTopic}/sse`);
+                this.chatRelayEvtSource.onmessage = (evt) => {
+                    try {
+                        const pkt = JSON.parse(evt.data);
+                        if (pkt && pkt.message) {
+                            const payload = JSON.parse(pkt.message);
+                            if (payload && payload.type === 'chat_msg' && payload.msg) {
+                                this.mergeClassChatMessages([payload.msg], [], this.isUserAdmin());
+                            } else if (payload && payload.type === 'chat_delete' && payload.msgId) {
+                                this.mergeClassChatMessages([], [payload.msgId], this.isUserAdmin());
+                            }
+                        }
+                    } catch (e) {}
+                };
+            }
+        } catch (e) {}
+    }
+
+    mergeClassChatMessages(incomingMsgs = [], deletedIds = [], persistIfAdmin = false) {
+        if (!Array.isArray(this.deletedChatIds)) this.deletedChatIds = [];
+        deletedIds.forEach(id => {
+            if (id && !this.deletedChatIds.includes(id)) {
+                this.deletedChatIds.push(id);
+            }
+        });
+        const deletedSet = new Set(this.deletedChatIds);
+
+        const map = new Map();
+        (this.classChatMessages || []).forEach(m => {
+            if (m && m.id && !deletedSet.has(m.id)) {
+                map.set(m.id, m);
+            }
+        });
+
+        let hasNew = false;
+        (incomingMsgs || []).forEach(m => {
+            if (m && m.id && !deletedSet.has(m.id)) {
+                if (!map.has(m.id)) hasNew = true;
+                map.set(m.id, m);
+            }
+        });
+
+        const merged = Array.from(map.values()).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+        this.classChatMessages = merged.slice(-100);
+
+        try {
+            localStorage.setItem('curie_class_chat_msgs', JSON.stringify(this.classChatMessages));
+            localStorage.setItem('curie_deleted_chat_ids', JSON.stringify(this.deletedChatIds));
+        } catch (e) {}
+
+        this.renderClassChatMessages();
+
+        // Also register message authors into AuthManager usersDb if not present
+        if (window.authManager && typeof window.authManager.mergeUsersLists === 'function') {
+            const chatUsers = [];
+            this.classChatMessages.forEach(m => {
+                if (m && m.authorEmail && m.authorEmail !== 'admin') {
+                    chatUsers.push({
+                        email: m.authorEmail,
+                        displayName: m.authorName || m.authorEmail.split('@')[0],
+                        role: m.isAdmin ? 'admin' : 'student',
+                        provider: m.authorEmail.includes('@gmail.com') ? 'google' : 'firebase',
+                        lastSeen: m.createdAt ? new Date(m.createdAt).toISOString() : new Date().toISOString()
+                    });
+                }
+            });
+            if (chatUsers.length > 0) {
+                window.authManager.mergeUsersLists(chatUsers, false);
+            }
+        }
+
+        if (persistIfAdmin && hasNew && this.isUserAdmin() && this.db) {
+            this.syncClassChatToFirestore();
+        }
+    }
+
+    syncClassChatToFirestore() {
+        if (!this.db) return;
+        this.db.collection('curie_data').doc('class_chat').set({
+            messages: this.classChatMessages,
+            deletedIds: this.deletedChatIds || [],
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(err => {
+            console.warn('Firestore class_chat direct write notice (bridge active):', err);
+        });
+    }
+
     sendClassChatMessage(text) {
         if (!this.requireAuthForChat('Отправка сообщений в чат')) return;
 
@@ -2465,42 +2585,52 @@ class AppManager {
             createdAt: Date.now()
         };
 
-        this.classChatMessages.push(newMsg);
-        if (this.classChatMessages.length > 100) {
-            this.classChatMessages = this.classChatMessages.slice(-100);
-        }
-
-        try {
-            localStorage.setItem('curie_class_chat_msgs', JSON.stringify(this.classChatMessages));
-        } catch (e) {}
-
-        this.renderClassChatMessages();
+        this.mergeClassChatMessages([newMsg], [], false);
         if (window.soundEngine) window.soundEngine.playSuccess();
 
-        if (this.db) {
-            this.db.collection('curie_data').doc('class_chat').set({
-                messages: this.classChatMessages,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            }).catch(err => {
-                console.warn('Could not sync class chat to Firestore:', err);
-            });
-        }
+        // 1. Broadcast over real-time bridge so regular users' messages never get lost even under strict Firestore rules
+        try {
+            fetch(`https://ntfy.sh/${this.chatRelayTopic}`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    type: 'chat_msg',
+                    msg: newMsg,
+                    ts: Date.now()
+                })
+            }).catch(() => {});
+        } catch (e) {}
+
+        // 2. Sync to Firebase Firestore
+        this.syncClassChatToFirestore();
     }
 
     deleteClassChatMessage(msgId) {
-        if (!this.isUserLoggedIn()) return;
+        if (!this.isUserLoggedIn() || !msgId) return;
+        if (!Array.isArray(this.deletedChatIds)) this.deletedChatIds = [];
+        if (!this.deletedChatIds.includes(msgId)) {
+            this.deletedChatIds.push(msgId);
+        }
+
         this.classChatMessages = (this.classChatMessages || []).filter(m => m.id !== msgId);
         try {
             localStorage.setItem('curie_class_chat_msgs', JSON.stringify(this.classChatMessages));
+            localStorage.setItem('curie_deleted_chat_ids', JSON.stringify(this.deletedChatIds));
         } catch (e) {}
         this.renderClassChatMessages();
 
-        if (this.db) {
-            this.db.collection('curie_data').doc('class_chat').set({
-                messages: this.classChatMessages,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        // Broadcast deletion over real-time bridge
+        try {
+            fetch(`https://ntfy.sh/${this.chatRelayTopic}`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    type: 'chat_delete',
+                    msgId,
+                    ts: Date.now()
+                })
             }).catch(() => {});
-        }
+        } catch (e) {}
+
+        this.syncClassChatToFirestore();
     }
 
     // --- LESSON CRUD ---
