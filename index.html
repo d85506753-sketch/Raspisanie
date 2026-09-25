@@ -30,6 +30,9 @@
             </div>
 
             <div class="header-controls">
+                <button class="cool-btn primary offline-download-btn" id="download-offline-btn" title="Скачать автономный файл с расписанием, ДЗ и чатами DeepSeek / Алиса на телефон">
+                    📲 Скачать офлайн
+                </button>
                 <button class="cool-btn" id="toggle-sound-btn" title="Включить / Выключить звук">
                     🔊 Звук
                 </button>
@@ -79,6 +82,9 @@
                 <a href="https://resheba.me" target="_blank" rel="noopener noreferrer" class="ai-chip chip-resheba" title="Решеба — Подробные решения к учебникам">
                     <span class="chip-icon">📖</span> Решеба
                 </a>
+                <button type="button" id="chip-download-offline-btn" class="ai-chip chip-offline-dl" title="Скачать на телефон файл с расписанием, ДЗ и чатами DeepSeek / Алиса AI">
+                    <span class="chip-icon">📲</span> Скачать офлайн (Расписание + ДЗ + ИИ)
+                </button>
             </div>
         </section>
 
@@ -708,9 +714,14 @@ service cloud.firestore {
                     </div>
                 </div>
 
-                <!-- 4. Visual Effects & Chaos Toggles (Optional) -->
+                <!-- 4. Visual Effects & Chaos Toggles (Global for all users) -->
                 <div class="admin-card-section">
-                    <h4 class="admin-section-subtitle">✨ Дополнительные режимы & Спецэффекты</h4>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                        <h4 class="admin-section-subtitle" style="margin: 0;">✨ Глобальные спецэффекты (видны всем на сайте)</h4>
+                        <button type="button" class="cool-btn" id="stop-all-abuse-btn" style="font-size: 0.78rem; padding: 4px 10px; color: var(--danger); border-color: rgba(248, 81, 73, 0.4);">
+                            🛑 Выключить все эффекты у всех
+                        </button>
+                    </div>
                     <div class="toggles-grid">
                         <div class="toggle-item">
                             <span>✏️ Режим свободного редактирования</span>
@@ -720,21 +731,21 @@ service cloud.firestore {
                             </label>
                         </div>
                         <div class="toggle-item">
-                            <span>🌈 RGB Подсветка</span>
+                            <span>🌈 RGB Подсветка (у всех)</span>
                             <label class="switch">
                                 <input type="checkbox" id="toggle-rgb-glow">
                                 <span class="slider"></span>
                             </label>
                         </div>
                         <div class="toggle-item">
-                            <span>🪩 Дискотека</span>
+                            <span>🪩 Дискотека (у всех)</span>
                             <label class="switch">
                                 <input type="checkbox" id="toggle-disco-party">
                                 <span class="slider"></span>
                             </label>
                         </div>
                         <div class="toggle-item">
-                            <span>🌮 Дождь из тако</span>
+                            <span>🌮 Дождь из тако (у всех)</span>
                             <label class="switch">
                                 <input type="checkbox" id="toggle-taco-rain">
                                 <span class="slider"></span>
@@ -745,7 +756,7 @@ service cloud.firestore {
 
                 <!-- 5. Schedule Presets -->
                 <div class="admin-card-section">
-                    <h4 class="admin-section-subtitle">🎭 Быстрые шаблоны расписания</h4>
+                    <h4 class="admin-section-subtitle">🎭 Глобальные тролль-шаблоны (у всех учеников)</h4>
                     <div class="presets-grid">
                         <button class="preset-btn" id="preset-lunch-btn">🍕 Всё на Обед</button>
                         <button class="preset-btn" id="preset-vacation-btn">🏖️ Каникулы</button>
@@ -753,12 +764,13 @@ service cloud.firestore {
                         <button class="preset-btn" id="preset-cybersport-btn">🎮 Киберспорт</button>
                         <button class="preset-btn" id="preset-secret-rooms-btn">🏰 Секретные кабинеты</button>
                         <button class="preset-btn" id="hack-grades-btn">⭐ Оценка 5 Всем</button>
+                        <button class="cool-btn primary" id="preset-restore-official-btn" style="grid-column: 1 / -1; justify-content: center;">🔄 Вернуть обычное школьное расписание (отменить рофл)</button>
                     </div>
                 </div>
 
                 <!-- 6. Soundboard & Music -->
                 <div class="admin-card-section">
-                    <h4 class="admin-section-subtitle">💥 Мемный Саундборд & Музыка</h4>
+                    <h4 class="admin-section-subtitle">💥 Глобальный Саундборд & Музыка (слышат все)</h4>
                     <div class="soundboard-grid" style="margin-bottom: 12px;">
                         <button class="soundboard-btn" data-sound="tacobell">🔔 Колокольчик</button>
                         <button class="soundboard-btn" data-sound="vineboom">💥 Vine Boom</button>
@@ -768,21 +780,22 @@ service cloud.firestore {
                         <button class="soundboard-btn" data-sound="success">🏆 Победа</button>
                     </div>
                     <div class="presets-grid">
-                        <button class="music-btn preset-btn" data-track="taco">🌮 Трек 1</button>
-                        <button class="music-btn preset-btn" data-track="phonk">⚡ Phonk</button>
-                        <button class="music-btn preset-btn" data-track="lofi">🎧 Lo-Fi</button>
-                        <button class="music-btn preset-btn" data-track="stop" style="color: var(--danger);">⏹️ Стоп</button>
+                        <button class="music-btn preset-btn" data-track="taco">🌮 Трек 1 (У всех)</button>
+                        <button class="music-btn preset-btn" data-track="phonk">⚡ Phonk (У всех)</button>
+                        <button class="music-btn preset-btn" data-track="lofi">🎧 Lo-Fi (У всех)</button>
+                        <button class="music-btn preset-btn" data-track="stop" style="color: var(--danger);">⏹️ Стоп у всех</button>
                     </div>
                 </div>
 
-                <!-- 6. Excuse Generator -->
+                <!-- 7. Excuse Generator -->
                 <div class="admin-card-section">
-                    <h4 class="admin-section-subtitle">🛡️ Генератор отмазок для учителя</h4>
-                    <button class="cool-btn" id="generate-excuse-btn" style="width: 100%; margin-bottom: 8px; justify-content: center;">🎲 Сгенерировать отмазку</button>
+                    <h4 class="admin-section-subtitle">🛡️ Генератор отмазок для учителя (в общий чат)</h4>
+                    <button class="cool-btn" id="generate-excuse-btn" style="width: 100%; margin-bottom: 8px; justify-content: center;">🎲 Сгенерировать отмазку и отправить всем</button>
                     <p id="excuse-output" style="font-style: italic; color: var(--text-muted); font-size: 0.85rem; text-align: center; min-height: 20px;"></p>
                 </div>
             </div>
         </div>
+    </div>
     <!-- Admin Live Chat Popup Box (20-25s) -->
     <div id="admin-chat-popup" class="admin-chat-popup" role="alert">
         <div class="chat-popup-inner">
@@ -820,13 +833,13 @@ service cloud.firestore {
             <span class="mob-nav-label">ДЗ</span>
             <span class="mob-badge" id="mob-hw-badge" style="display: none;">0</span>
         </button>
+        <button class="mobile-nav-item" id="mob-nav-offline" type="button" title="Скачать офлайн версию на телефон">
+            <span class="mob-nav-icon">📲</span>
+            <span class="mob-nav-label">Офлайн</span>
+        </button>
         <button class="mobile-nav-item" id="mob-nav-bells" type="button" title="Звонки">
             <span class="mob-nav-icon">🔔</span>
             <span class="mob-nav-label">Звонки</span>
-        </button>
-        <button class="mobile-nav-item" id="mob-nav-cloud" type="button" title="Статус облачной синхронизации">
-            <span class="mob-nav-icon">☁️</span>
-            <span class="mob-nav-label">Облако</span>
         </button>
         <button class="mobile-nav-item" id="mob-nav-admin" type="button" style="display: none;" title="Панель администратора">
             <span class="mob-nav-icon">⚙️</span>

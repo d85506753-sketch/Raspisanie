@@ -13,6 +13,22 @@ class SoundEngine {
         this.isPlayingMusic = false;
         this.musicTimer = null;
         this.bgGain = null;
+        this.setupAutoUnlock();
+    }
+
+    setupAutoUnlock() {
+        const unlock = () => {
+            if (!this.ctx) {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (AudioCtx) this.ctx = new AudioCtx();
+            }
+            if (this.ctx && this.ctx.state === 'suspended') {
+                this.ctx.resume().catch(() => {});
+            }
+        };
+        window.addEventListener('click', unlock, { passive: true });
+        window.addEventListener('touchstart', unlock, { passive: true });
+        window.addEventListener('keydown', unlock, { passive: true });
     }
 
     init() {
@@ -21,7 +37,7 @@ class SoundEngine {
             this.ctx = new AudioCtx();
         }
         if (this.ctx.state === 'suspended') {
-            this.ctx.resume();
+            this.ctx.resume().catch(() => {});
         }
     }
 

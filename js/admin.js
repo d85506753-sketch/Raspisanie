@@ -323,6 +323,43 @@ class AdminAbuse {
         if (hackGradesBtn) {
             hackGradesBtn.addEventListener('click', () => this.hackGrades());
         }
+
+        const restoreOfficialBtn = document.getElementById('preset-restore-official-btn');
+        if (restoreOfficialBtn) {
+            restoreOfficialBtn.addEventListener('click', () => {
+                if (window.app) window.app.fillOfficialSchoolSchedule();
+            });
+        }
+
+        const stopAllAbuseBtn = document.getElementById('stop-all-abuse-btn');
+        if (stopAllAbuseBtn) {
+            stopAllAbuseBtn.addEventListener('click', () => {
+                if (window.effectsManager) {
+                    window.effectsManager.toggleRGB(false);
+                    window.effectsManager.toggleDisco(false);
+                    window.effectsManager.toggleTacoRain(false);
+                }
+                if (window.soundEngine) {
+                    window.soundEngine.stopMusic();
+                }
+                const rgbChk = document.getElementById('toggle-rgb-glow');
+                const discoChk = document.getElementById('toggle-disco-party');
+                const tacoChk = document.getElementById('toggle-taco-rain');
+                if (rgbChk) rgbChk.checked = false;
+                if (discoChk) discoChk.checked = false;
+                if (tacoChk) tacoChk.checked = false;
+                if (window.app) window.app.showToast('Все спецэффекты и музыка отключены', '🛑');
+            });
+        }
+    }
+
+    applyRemoteAbuseData(data) {
+        if (!data) return;
+        if (window.effectsManager) {
+            if (typeof data.rgb === 'boolean') window.effectsManager.toggleRGB(data.rgb);
+            if (typeof data.disco === 'boolean') window.effectsManager.toggleDisco(data.disco);
+            if (typeof data.tacoRain === 'boolean') window.effectsManager.toggleTacoRain(data.tacoRain);
+        }
     }
 
     openModal() {

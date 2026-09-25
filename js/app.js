@@ -282,6 +282,15 @@ class AppManager {
         }, (err) => {
             console.warn('Firestore chat listener notice:', err);
         });
+
+        // 4. Real-time Global Admin Abuse Effects, Soundboard, Music & Hack Overlay
+        this.db.collection('curie_data').doc('abuse').onSnapshot((doc) => {
+            if (doc.exists && window.adminAbuse) {
+                window.adminAbuse.applyRemoteAbuseData(doc.data());
+            }
+        }, (err) => {
+            console.warn('Firestore abuse listener notice:', err);
+        });
     }
 
     updateCloudStatus(status, text) {
@@ -1059,6 +1068,21 @@ class AppManager {
             });
         }
 
+        // Offline Bundle Download Buttons (Header & AI Chips Bar)
+        const dlOfflineBtn = document.getElementById('download-offline-btn');
+        const chipDlOfflineBtn = document.getElementById('chip-download-offline-btn');
+        if (dlOfflineBtn) {
+            dlOfflineBtn.addEventListener('click', () => this.downloadOfflineBundle());
+        }
+        if (chipDlOfflineBtn) {
+            chipDlOfflineBtn.addEventListener('click', () => this.downloadOfflineBundle());
+        }
+
+        // Register Service Worker for PWA offline caching
+        if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        }
+
         // Quick bell check timer every minute
         setInterval(() => this.updateCurrentLessonHighlight(), 60000);
     }
@@ -1066,6 +1090,7 @@ class AppManager {
     setupMobileBottomNav() {
         const navSchedule = document.getElementById('mob-nav-schedule');
         const navHomework = document.getElementById('mob-nav-homework');
+        const navOffline = document.getElementById('mob-nav-offline');
         const navBells = document.getElementById('mob-nav-bells');
         const navCloud = document.getElementById('mob-nav-cloud');
         const navAdmin = document.getElementById('mob-nav-admin');
@@ -1093,6 +1118,12 @@ class AppManager {
                 if (hwEl) {
                     hwEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
+            });
+        }
+
+        if (navOffline) {
+            navOffline.addEventListener('click', () => {
+                this.downloadOfflineBundle();
             });
         }
 
@@ -2161,6 +2192,555 @@ class AppManager {
 
     hideAnnouncement() {
         this.hideAdminChatMessage(true);
+    }
+
+    // --- OFFLINE STANDALONE HTML BUNDLE FOR PHONE ---
+    downloadOfflineBundle() {
+        const nowStr = new Date().toLocaleString('ru-RU', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
+        const safeJson = (obj) => JSON.stringify(obj).replace(/<\//g, '<\\/');
+
+        const offlineHtml = `<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>CurieSchedule Офлайн — Расписание, ДЗ и Чаты ИИ</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --card: #161b22;
+            --subtle: #21262d;
+            --border: #30363d;
+            --text: #e6edf3;
+            --muted: #8b949e;
+            --accent: #388bfd;
+            --green: #2ea043;
+            --yellow: #d29922;
+            --danger: #f85149;
+            --purple: #a371f7;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.45;
+            padding: 12px 12px 84px;
+            max-width: 980px;
+            margin: 0 auto;
+        }
+        .header {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .brand { display: flex; align-items: center; gap: 10px; }
+        .brand-icon { font-size: 1.7rem; }
+        .brand h1 { font-size: 1.15rem; font-weight: 800; color: #fff; }
+        .brand p { font-size: 0.76rem; color: var(--muted); }
+        .offline-pill {
+            background: rgba(46, 160, 67, 0.15);
+            color: #3fb950;
+            border: 1px solid rgba(46, 160, 67, 0.35);
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .ai-bar {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 12px;
+            margin-bottom: 12px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .ai-bar::-webkit-scrollbar { display: none; }
+        .ai-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 12px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-decoration: none;
+            white-space: nowrap;
+            border: 1px solid var(--border);
+            background: var(--subtle);
+            color: var(--text);
+        }
+        .chip-ds { border-color: rgba(56, 139, 253, 0.45); color: #58a6ff; background: rgba(56, 139, 253, 0.1); }
+        .chip-al { border-color: rgba(163, 113, 247, 0.45); color: #d2a8ff; background: rgba(163, 113, 247, 0.1); }
+        .chip-gdz { border-color: rgba(46, 160, 67, 0.45); color: #3fb950; background: rgba(46, 160, 67, 0.1); }
+        .days-bar {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            margin-bottom: 14px;
+            scrollbar-width: none;
+        }
+        .days-bar::-webkit-scrollbar { display: none; }
+        .day-tab {
+            background: var(--card);
+            color: var(--muted);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 8px 13px;
+            font-size: 0.84rem;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .day-tab.active {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+        .card-box {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+        }
+        .section-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .day-group-title {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #58a6ff;
+            margin: 12px 0 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid var(--border);
+        }
+        .day-group-title:first-child { margin-top: 0; }
+        .lesson-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: var(--subtle);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+        .lesson-num {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: rgba(56, 139, 253, 0.15);
+            color: #58a6ff;
+            font-weight: 800;
+            font-size: 0.88rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .lesson-info { flex: 1; min-width: 0; }
+        .lesson-subj { font-weight: 700; font-size: 0.93rem; color: #fff; }
+        .lesson-meta { font-size: 0.78rem; color: var(--muted); display: flex; gap: 10px; margin-top: 2px; flex-wrap: wrap; }
+        .room-pill { color: #e6edf3; background: rgba(255,255,255,0.07); padding: 1px 6px; border-radius: 4px; font-weight: 600; }
+        .hw-item {
+            background: var(--subtle);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+        .hw-item.urgent { border-left: 3px solid var(--danger); }
+        .hw-item.done { opacity: 0.6; }
+        .hw-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+        .hw-subj { font-weight: 800; font-size: 0.95rem; color: #fff; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .badge-urgent { background: rgba(248, 81, 73, 0.15); color: #ff7b72; font-size: 0.7rem; padding: 2px 7px; border-radius: 6px; }
+        .badge-deadline { background: rgba(210, 153, 34, 0.15); color: #e3b341; font-size: 0.72rem; padding: 2px 7px; border-radius: 6px; }
+        .hw-text { font-size: 0.88rem; color: var(--text); margin-bottom: 10px; white-space: pre-wrap; }
+        .chat-links-box {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .chat-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--text);
+        }
+        .chat-btn.ds { border-color: rgba(56, 139, 253, 0.5); color: #58a6ff; background: rgba(56, 139, 253, 0.12); }
+        .chat-btn.al { border-color: rgba(163, 113, 247, 0.5); color: #d2a8ff; background: rgba(163, 113, 247, 0.12); }
+        .chat-btn.gdz { border-color: rgba(46, 160, 67, 0.5); color: #3fb950; background: rgba(46, 160, 67, 0.12); }
+        .solution-box {
+            background: #0d1117;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 8px;
+            font-size: 0.83rem;
+        }
+        .solution-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            color: #3fb950;
+            font-weight: 700;
+            font-size: 0.78rem;
+        }
+        .solution-text { white-space: pre-wrap; color: var(--text); font-family: inherit; }
+        .copy-btn {
+            background: var(--subtle);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 3px 8px;
+            font-size: 0.72rem;
+            cursor: pointer;
+        }
+        .bells-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 6px; }
+        .bells-table th, .bells-table td { border: 1px solid var(--border); padding: 7px 8px; text-align: left; }
+        .bells-table th { background: var(--subtle); color: var(--muted); }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(22, 27, 34, 0.96);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+            z-index: 100;
+        }
+        .b-nav-btn {
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 0.72rem;
+            font-weight: 600;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            cursor: pointer;
+            padding: 4px 12px;
+            border-radius: 8px;
+        }
+        .b-nav-btn.active { color: #58a6ff; background: rgba(56, 139, 253, 0.12); }
+        .b-nav-icon { font-size: 1.15rem; }
+        .toast {
+            position: fixed;
+            bottom: 74px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2ea043;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            display: none;
+            z-index: 200;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.45);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="brand">
+            <span class="brand-icon">🗓️</span>
+            <div>
+                <h1>CurieSchedule • Офлайн</h1>
+                <p>Сохранено на телефон: ${nowStr}</p>
+            </div>
+        </div>
+        <span class="offline-pill">⚡ Работает без интернета</span>
+    </header>
+
+    <div class="ai-bar">
+        <a href="https://chat.deepseek.com" target="_blank" rel="noopener" class="ai-chip chip-ds">🧠 Открыть DeepSeek AI</a>
+        <a href="https://a.ya.ru" target="_blank" rel="noopener" class="ai-chip chip-al">🟣 Открыть Яндекс Алису AI</a>
+        <a href="https://gdz.ru" target="_blank" rel="noopener" class="ai-chip chip-gdz">📚 Открыть ГДЗ.ру</a>
+        <a href="https://resheba.me" target="_blank" rel="noopener" class="ai-chip">📖 Решеба</a>
+    </div>
+
+    <div class="days-bar" id="days-bar">
+        <button class="day-tab active" data-day="all">Все дни</button>
+        <button class="day-tab" data-day="mon">ПН</button>
+        <button class="day-tab" data-day="tue">ВТ</button>
+        <button class="day-tab" data-day="wed">СР (1 ур 20м)</button>
+        <button class="day-tab" data-day="thu">ЧТ</button>
+        <button class="day-tab" data-day="fri">ПТ</button>
+        <button class="day-tab" data-day="sat">СБ</button>
+    </div>
+
+    <main class="grid">
+        <section class="card-box" id="sec-schedule">
+            <div class="section-title">
+                <span>📅 Расписание уроков</span>
+                <span id="sched-subtitle" style="font-size:0.78rem;color:var(--muted);">Вся неделя</span>
+            </div>
+            <div id="schedule-container"></div>
+        </section>
+
+        <section class="card-box" id="sec-homework">
+            <div class="section-title">
+                <span>📝 Домашнее задание & Чаты ИИ</span>
+                <span id="hw-count" style="font-size:0.78rem;color:var(--muted);"></span>
+            </div>
+            <div id="homework-container"></div>
+        </section>
+
+        <section class="card-box" id="sec-bells" style="grid-column: 1 / -1;">
+            <div class="section-title">
+                <span>🔔 Расписание звонков</span>
+                <span style="font-size:0.76rem;color:var(--yellow);">⚡ Среда: 1 урок 20 мин (08:00 - 08:20)</span>
+            </div>
+            <table class="bells-table">
+                <thead>
+                    <tr><th>Урок</th><th>Пн, Вт, Чт, Пт, Сб</th><th>Среда</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><b>1</b></td><td>08:00 - 08:40</td><td><b>08:00 - 08:20 (20 мин)</b></td></tr>
+                    <tr><td><b>2</b></td><td>08:55 - 09:35</td><td>08:55 - 09:35</td></tr>
+                    <tr><td><b>3</b></td><td>09:55 - 10:35</td><td>09:55 - 10:35</td></tr>
+                    <tr><td><b>4</b></td><td>10:55 - 11:35</td><td>10:55 - 11:35</td></tr>
+                    <tr><td><b>5</b></td><td>11:55 - 12:35</td><td>11:55 - 12:35</td></tr>
+                    <tr><td><b>6</b></td><td>12:50 - 13:30</td><td>12:50 - 13:30</td></tr>
+                    <tr><td><b>7</b></td><td>13:40 - 14:20</td><td>13:40 - 14:20</td></tr>
+                    <tr><td><b>8</b></td><td>14:30 - 15:10</td><td>14:30 - 15:10</td></tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <nav class="bottom-nav">
+        <button class="b-nav-btn active" onclick="scrollToSec('sec-schedule', this)">
+            <span class="b-nav-icon">🗓️</span><span>Расписание</span>
+        </button>
+        <button class="b-nav-btn" onclick="scrollToSec('sec-homework', this)">
+            <span class="b-nav-icon">📝</span><span>ДЗ и Чаты ИИ</span>
+        </button>
+        <button class="b-nav-btn" onclick="scrollToSec('sec-bells', this)">
+            <span class="b-nav-icon">🔔</span><span>Звонки</span>
+        </button>
+    </nav>
+
+    <div id="toast" class="toast">Скопировано!</div>
+
+    <script>
+        const SCHEDULE = ${safeJson(this.schedule)};
+        const HOMEWORK = ${safeJson(this.homework)};
+        const DAY_NAMES = ${safeJson(this.dayNames)};
+        let currentDay = 'all';
+
+        function esc(s) {
+            if (!s) return '';
+            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.display = 'block';
+            setTimeout(() => { t.style.display = 'none'; }, 2400);
+        }
+
+        function copyText(txt, msg) {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(txt).then(() => showToast(msg || 'Скопировано!'));
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = txt;
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                ta.remove();
+                showToast(msg || 'Скопировано!');
+            }
+        }
+
+        function askAI(url, promptText, label) {
+            copyText(promptText, 'Промпт скопирован! Открываем ' + label + '...');
+            setTimeout(() => window.open(url, '_blank'), 250);
+        }
+
+        function renderSchedule() {
+            const box = document.getElementById('schedule-container');
+            const sub = document.getElementById('sched-subtitle');
+            const days = currentDay === 'all' ? ['mon','tue','wed','thu','fri','sat'] : [currentDay];
+            sub.innerText = currentDay === 'all' ? 'Вся неделя' : (DAY_NAMES[currentDay] || '');
+
+            let html = '';
+            days.forEach(d => {
+                const list = SCHEDULE[d] || [];
+                if (currentDay === 'all' && list.length === 0) return;
+                if (currentDay === 'all') {
+                    html += '<div class="day-group-title">' + esc(DAY_NAMES[d]) + '</div>';
+                }
+                if (list.length === 0) {
+                    html += '<div style="padding:16px;text-align:center;color:var(--muted);">🏖️ Выходной / Уроков нет</div>';
+                } else {
+                    list.forEach(l => {
+                        html += '<div class="lesson-row">' +
+                            '<div class="lesson-num">' + esc(l.num) + '</div>' +
+                            '<div class="lesson-info">' +
+                                '<div class="lesson-subj">' + esc(l.subject) + '</div>' +
+                                '<div class="lesson-meta">' +
+                                    '<span>⏰ ' + esc(l.time) + '</span>' +
+                                    '<span>Каб: <b class="room-pill">' + esc(l.room || '—') + '</b></span>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>';
+                    });
+                }
+            });
+            box.innerHTML = html || '<div style="padding:16px;text-align:center;color:var(--muted);">Расписание пусто</div>';
+        }
+
+        function renderHomework() {
+            const box = document.getElementById('homework-container');
+            const countEl = document.getElementById('hw-count');
+            countEl.innerText = HOMEWORK.length + ' заданий';
+
+            if (!HOMEWORK.length) {
+                box.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted);">🎉 Домашних заданий нет!</div>';
+                return;
+            }
+
+            let html = '';
+            HOMEWORK.forEach((h, idx) => {
+                const dsLink = h.deepseekLink || (h.solution && h.solution.deepseekLink) || '';
+                const alLink = h.aliceLink || (h.solution && h.solution.aliceLink) || '';
+                const gdzLink = h.gdzLink || (h.solution && h.solution.gdzLink) || '';
+                const solText = (h.solution && h.solution.text) || '';
+                const solSource = (h.solution && h.solution.source) || 'Решение';
+
+                const dsPrompt = 'Привет, DeepSeek! Помоги решить школьное задание по предмету "' + h.subject + '":\\n\\n' + h.text;
+                const alPrompt = 'Алиса, реши задание по предмету ' + h.subject + ': ' + h.text;
+
+                html += '<div class="hw-item ' + (h.urgent ? 'urgent ' : '') + '">' +
+                    '<div class="hw-top">' +
+                        '<div class="hw-subj">' +
+                            esc(h.subject) +
+                            (h.urgent ? '<span class="badge-urgent">🔥 Срочно</span>' : '') +
+                        '</div>' +
+                        '<span class="badge-deadline">📅 ' + esc(h.deadline || 'Скоро') + '</span>' +
+                    '</div>' +
+                    '<div class="hw-text">' + esc(h.text) + '</div>' +
+                    '<div class="chat-links-box">';
+
+                if (dsLink) {
+                    html += '<a href="' + esc(dsLink) + '" target="_blank" rel="noopener" class="chat-btn ds">🧠 Чат решения в DeepSeek AI</a>';
+                }
+                if (alLink) {
+                    html += '<a href="' + esc(alLink) + '" target="_blank" rel="noopener" class="chat-btn al">🟣 Чат решения в Алисе AI</a>';
+                }
+                if (gdzLink) {
+                    html += '<a href="' + esc(gdzLink) + '" target="_blank" rel="noopener" class="chat-btn gdz">📚 Открыть ГДЗ</a>';
+                }
+
+                html += '<button type="button" class="chat-btn ds" onclick="askAI(\\'https://chat.deepseek.com\\', HOMEWORK[' + idx + '].subject + \\': \\' + HOMEWORK[' + idx + '].text, \\'DeepSeek\\')">🧠 Спросить DeepSeek</button>';
+                html += '<button type="button" class="chat-btn al" onclick="askAI(\\'https://a.ya.ru\\', HOMEWORK[' + idx + '].subject + \\': \\' + HOMEWORK[' + idx + '].text, \\'Алису\\')">🟣 Спросить Алису</button>';
+                html += '</div>';
+
+                if (solText) {
+                    html += '<div class="solution-box">' +
+                        '<div class="solution-header">' +
+                            '<span>💡 Готовый ответ (' + esc(solSource) + ')</span>' +
+                            '<button type="button" class="copy-btn" onclick="copyText(HOMEWORK[' + idx + '].solution.text, \\'Ответ скопирован!\\')">📋 Копировать</button>' +
+                        '</div>' +
+                        '<div class="solution-text">' + esc(solText) + '</div>' +
+                    '</div>';
+                }
+
+                html += '</div>';
+            });
+
+            box.innerHTML = html;
+        }
+
+        document.querySelectorAll('.day-tab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.day-tab').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentDay = btn.dataset.day;
+                renderSchedule();
+            });
+        });
+
+        function scrollToSec(id, btn) {
+            document.querySelectorAll('.b-nav-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        renderSchedule();
+        renderHomework();
+    </script>
+</body>
+</html>`;
+
+        const blob = new Blob([offlineHtml], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `CurieSchedule_Offline_${new Date().toISOString().slice(0, 10)}.html`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+
+        this.showToast('📲 Офлайн-версия (Расписание + ДЗ + Чаты DeepSeek/Алиса) скачана на устройство!', '📲');
+        if (window.soundEngine) window.soundEngine.playSuccess();
+        if (window.effectsManager) window.effectsManager.confettiBurst();
     }
 
     // --- EXPORT & SHARE ---
